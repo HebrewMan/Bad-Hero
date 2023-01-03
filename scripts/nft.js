@@ -116,6 +116,24 @@ async function main() {
   console.log("setHeroset success");
 
 
+  /** Test 测试专用配置*/
+  const setUnlockTimeTx = await market.setUnlockTime(1800);
+  await setUnlockTimeTx.wait();
+
+  const addWhiteListTx1 = await box.addWhiteList("0x511673a05De8e6CdFf5464e3490d294f21666242", true);
+  await addWhiteListTx1.wait();
+
+  const addWhiteListTx2 = await box.addWhiteList("0xA1152FC97d76a8Db0e530f0202B31e9C54801349", true);
+  await addWhiteListTx2.wait();
+
+  const setUnlockTimeTx2 = await game.setUnlockTime(600);
+  await setUnlockTimeTx2.wait();
+
+  // const setGameInfoTx =  game.setGameInfo(12*3600,5,10*10**18,100,10,25,2000*10**18);
+  // await setGameInfoTx.wait();
+
+  console.log("Test config success");
+
   // await verifyContract("contracts/Token.sol:Token", token.address);
   // await verifyContract("contracts/GetFee.sol:GetFee", getFee.address);
   // await verifyContract("contracts/NFT.sol:NFT", nft.address);

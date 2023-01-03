@@ -230,4 +230,8 @@ contract Market is AccessControl,Ownable{
     function setGame(address payable _gameAddress) public onlyOwner{
         _game = Game(_gameAddress);
     }
+
+    function setUnlockTime(uint256 unlockTime) public onlyOwner {
+        _unlockTime = unlockTime;
+    }
 }

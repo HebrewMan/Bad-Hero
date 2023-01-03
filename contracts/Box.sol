@@ -22,6 +22,8 @@ contract Box is Ownable, ReentrancyGuard{
     uint256 _temNum=5;
     mapping(address => bool) public whiteList;
     address public bank;
+    uint256 public discountNumerator = 9000;
+    uint256 public discountDenominator = 10000;
 
 
     struct monsterInfo{
@@ -34,19 +36,35 @@ contract Box is Ownable, ReentrancyGuard{
      
     event BuyBox(uint32 index,uint256 price,address sender);
     event OpenBox(uint256 indexed rarity,uint256 indexed tokenId,uint256 monsterId,address sender);
-    event AddWhiteList(address indexed account);
+    event AddWhiteList(address indexed account, bool status);
 
-    function addWhiteList(address account) public onlyOwner {
-        whiteList[account] = true;
-        emit AddWhiteList(account);
+    function addWhiteList(address account, bool status) public onlyOwner {
+        whiteList[account] = status;
+        emit AddWhiteList(account, status);
+    }
+
+    function addWhiteListBatch(address[] memory accounts, bool status) public onlyOwner {
+        for(uint256 i = 0; i < accounts.length; ++i) {
+            whiteList[accounts[i]] = status;
+            emit AddWhiteList(accounts[i], status);
+        }
     }
 
     function setBank(address _bank) public onlyOwner {
         bank = _bank;
     }
+
+    function setRate(uint256 _discountNumerator, uint256 _discountDenominator) public onlyOwner {
+        discountNumerator = _discountNumerator;
+        discountDenominator = _discountDenominator;
+    }
     
     function buyBox()  public nonReentrant payable{
-        payable(bank).transfer(_boxPrice);
+        uint256 price = _boxPrice;
+        if(whiteList[msg.sender]) {
+            price = _boxPrice * discountNumerator / discountDenominator;
+        }
+        payable(bank).transfer(price);
         _boxByUser[_boxId]= msg.sender;
         _userBoxs[msg.sender].push(_boxId);
         _boxId += 1;

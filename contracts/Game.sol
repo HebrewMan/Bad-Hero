@@ -113,6 +113,15 @@ contract Game is AccessControl,Ownable {
         uint256 unLkTime;
    }
 
+   function setUnlockTime(uint256 unlockTime) public onlyOwner {
+       _unlockTime = unlockTime;
+       _receiveInfo = receiveInfo(2*_unlockTime,3,7);
+   }
+
+    function setGameInfo(uint32 enlistTime,uint32 temNum,uint256 speedMoney,uint256 maxLevel,  
+            uint256 addAttr,uint256 upAttrCost,uint256 upEqCost) public onlyOwner {
+        _gameInfo = gameInfo(enlistTime,temNum,speedMoney,maxLevel,addAttr,upAttrCost,upEqCost);
+    }
 
     function rand(uint256 _length) public view returns(uint256) {
         uint256 random = uint256(keccak256(abi.encodePacked(block.number,block.difficulty, block.timestamp)));
