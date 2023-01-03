@@ -41,6 +41,12 @@ module.exports = {
       gasPrice: 20000000000,
       accounts: [process.env.DEPLOY_PRIVATE_KEY]
     },
+    aitdTest: {
+      url: "http://http-testnet.aitd.io",
+      chainId: 1320,
+      gasPrice: 50000000000,
+      accounts: [process.env.DEPLOY_PRIVATE_KEY]
+    }
     // rinkeby: {
     //   url: "https://eth-rinkeby.alchemyapi.io/v2/123abc123abc123abc123abc123abcde",
     //   accounts: [privateKey1, privateKey2]
@@ -53,7 +59,7 @@ module.exports = {
     } 
   },
   solidity: {
-    version: "0.8.11",
+    version: "0.8.17",
     settings: {
       optimizer: {
         enabled: true,

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.11;
+pragma solidity ^0.8.17;
+
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "./GetFee.sol";
 import "./Game.sol";
 import "./Hero.sol";
 import "./NFT.sol";
@@ -52,7 +52,7 @@ contract Box is Ownable, ReentrancyGuard{
         _boxId += 1;
 
         _hero.initHeroEq(msg.sender);
-        emit BuyBox(1,uint256(amount),msg.sender);
+        emit BuyBox(1,uint256(_boxPrice),msg.sender);
     }
 
     function buyBoxBatch(uint256 amount) public payable {
