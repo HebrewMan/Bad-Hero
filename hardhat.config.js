@@ -19,10 +19,12 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  defaultNetwork:"boom",
+  defaultNetwork:"hardhat",
   networks: {
     hardhat: {
+     
     },
+    
     bscTest: {
       url: "https://data-seed-prebsc-1-s3.binance.org:8545",
       chainId: 97,
@@ -39,6 +41,12 @@ module.exports = {
       url: "http://103.214.175.186:8540",
       chainId: 352,
       gasPrice: 20000000000,
+      accounts: [process.env.DEPLOY_PRIVATE_KEY]
+    },
+    aitdTest: {
+      url: "http://http-testnet.aitd.io",
+      chainId: 1320,
+      gasPrice: 50000000000,
       accounts: [process.env.DEPLOY_PRIVATE_KEY]
     },
     // rinkeby: {
