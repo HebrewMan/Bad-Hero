@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.11;
+pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 // import "./UserLib.sol";
 
 contract NFT is ERC721, AccessControl {
@@ -12,6 +14,7 @@ contract NFT is ERC721, AccessControl {
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     Counters.Counter private _tokenIdCounter;
+    string public baseUri;
 
     constructor() ERC721("NFT", "MWR") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -37,6 +40,14 @@ contract NFT is ERC721, AccessControl {
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    function setBaseURI(string memory uri) public onlyRole(DEFAULT_ADMIN_ROLE){
+        baseUri = uri;
+    }
+
+    function tokenURI(uint256 tokenid) view public override returns (string memory) {
+        return string.concat(baseUri, Strings.toString(tokenid));
     }
 
 }

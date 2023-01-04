@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.11;
+pragma solidity ^0.8.17;
+
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+
 // import "./INFT.sol";
 import "./Game.sol";
-import "./GetFee.sol";
 
 contract Market is AccessControl,Ownable{
     using EnumerableSet for EnumerableSet.UintSet;
@@ -23,7 +24,6 @@ contract Market is AccessControl,Ownable{
     market[] public markets;
     Game private _game;
     IERC20 private _erc20;
-    GetFee public router;
     uint256 _unlockTime = 86400;
     mapping(uint256=>mtStakeInfo) _tokenMtStakeInfo;
     stakeInfo public _stakeInfo = stakeInfo(30,50*10**18,100*10**18); 
@@ -166,7 +166,7 @@ contract Market is AccessControl,Ownable{
         require(_game.getTokenDetailGenre(_tokenId) ==1,"Wrong operation");
         require(_tokenMtStakeInfo[_tokenId].endTime<block.timestamp,"The time is not up yet");
         require(userStakeInfo[msg.sender].contains(_tokenId) == true, "It's already decompressed");
-        uint256  amount = router.getUsdtPrice1(_tokenMtStakeInfo[_tokenId].money);
+        uint256  amount = _tokenMtStakeInfo[_tokenId].money;
         // _erc20.transfer(msg.sender, amount);
         _game.setTokenDetailGenre(_tokenId, 0);
         //address user,uint256 reward,uint256 addType
@@ -187,7 +187,7 @@ contract Market is AccessControl,Ownable{
 
    
     function getUnStakeMoney(uint256 _tokenId) public view returns(uint256){
-        return router.getUsdtPrice1(_tokenMtStakeInfo[_tokenId].money);
+        return _tokenMtStakeInfo[_tokenId].money;
     }
 
     function getUserStakes(address addr) public view returns(uint256[] memory){
@@ -203,9 +203,6 @@ contract Market is AccessControl,Ownable{
         _erc20 = IERC20(_tokenAddr);
     }
 
-    function setRouterAddr(address _tokenAddr) public onlyOwner{
-        router = GetFee(_tokenAddr);
-    }
 
     function setNFTAddr(address _tokenAddr) public onlyOwner{
         _inft = IERC721(_tokenAddr);
@@ -232,5 +229,9 @@ contract Market is AccessControl,Ownable{
 
     function setGame(address payable _gameAddress) public onlyOwner{
         _game = Game(_gameAddress);
+    }
+
+    function setUnlockTime(uint256 unlockTime) public onlyOwner {
+        _unlockTime = unlockTime;
     }
 }
