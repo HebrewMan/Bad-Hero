@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.11;
+pragma solidity ^0.8.17;
+
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IPancakeRouter01.sol";
@@ -7,42 +8,43 @@ import "./NFT.sol";
 import "./Game.sol";
 import "./Hero.sol";
 contract Arena is Ownable{
-    constructor() {
-        initArRewardSet();
-        arenaOpneTime = 1652054400;
-        weekOpneTime = 1651968000 + weekCyle;
-    }
-
-    nftKind[] public _nftKinds;
     uint256 public arenaPool = 0; 
     uint256 public arenaNumb; 
     uint256 public arenaOpneTime ; 
     uint256 public weekOpneTime ; 
     uint256 public weekCyle =  7*86400; 
     uint256 public arenaCyle =  86400; 
+    uint256 public weekRound=0; 
+
     mapping(uint256=>uint256) _tokenIdType; 
     mapping(uint256=>arenaInfo) _arenaInfo; 
-    mapping(uint256=>tokenArena[]) public tokenSortArenas;  
-    arenaSet _arenaSet = arenaSet(7,100*10**18,15); 
-    IERC20 public erc20 = IERC20(0x0a2231B33152d059454FF43F616E4434Afb6Cc64);
-    Game public _game;
-    Hero public _hero;
     mapping(uint256=>address[]) _weekFightUsers;
     mapping(uint256=>tokenArena[]) _tokenArenas;
-    arRewardSet[] public _arRewardSet;
-    weekFighting _weekFighting = weekFighting(0,5,100,10);  
     mapping(uint256=>weekLottery) public wkLottory;
     mapping(uint256=>mapping(uint256=>RinKInfo)) public rinkInfo;
   
-    uint256 public weekRound=0; 
+    arRewardSet[] public _arRewardSet;
+    nftKind[] public _nftKinds;
 
+    arenaSet _arenaSet = arenaSet(7,100*10**18,15); 
+    weekFighting _weekFighting = weekFighting(0,5,100,10);  
+
+    IERC20 public erc20 = IERC20(0x0a2231B33152d059454FF43F616E4434Afb6Cc64);
+    Game public _game;
+    Hero public _hero;
+
+    constructor() {
+        initArRewardSet();
+        arenaOpneTime = 1652054400;
+        weekOpneTime = 1651968000 + weekCyle;
+    }
+   
     event JoinArena(uint256 indexed tokenId,uint256 indexed nper,uint256 indexed wins,address sender);
     event DisCompetitiveReward(uint256 indexed arenaNumb,uint256 indexed rink,uint256 tokenId,address sender,uint256 reward);
     event DisArenaReward(uint256 indexed arenaNumb,uint256 indexed rink,uint256 tokenId,address sender,uint256 reward);
     event DoWeekTask(uint256 indexed weekRound,address sender);
     event OpenWeekTask(uint256 indexed weekRound,uint256 startTime);
 
-    
     struct weekFighting{
         uint256 round; 
         uint256 successRate; 
@@ -176,9 +178,6 @@ contract Arena is Ownable{
         emit OpenWeekTask(weekRound,weekOpneTime);
     }
     
-    function getSortArenas() view public returns(tokenArena[] memory){
-        return tokenSortArenas[arenaNumb];
-    }
     
     function disCompetitiveReward(uint256 _arenaNumb,uint256 ranking,address sender,uint256 tokenId,uint256 reward)public onlyOwner{
         require(rinkInfo[_arenaNumb][ranking].isOk ==false,"The rewards have already been handed out");
@@ -217,6 +216,7 @@ contract Arena is Ownable{
     function setErc20(address _erc20Address) public onlyOwner{
         erc20 = IERC20(_erc20Address);
     }
+    
     function setHero(address _Address) public onlyOwner{
         _hero = Hero(_Address);
     }

@@ -7,16 +7,7 @@ async function main() {
   // If this script is run directly using `node` you may want to call compile
   // manually to make sure everything is compiled
   // await hre.run('compile');
-  /** Token */
-  const Token = await hre.ethers.getContractFactory("Token");
-  const token = await Token.deploy();
-  await token.deployed();
-  console.log("Token deployed to:", token.address);
-  /** getFee */
-  const GetFee = await hre.ethers.getContractFactory("GetFee");
-  const getFee = await GetFee.deploy();
-  await getFee.deployed();
-  console.log("GetFee deployed to:", getFee.address);
+
   /** nft */
   const NFT = await hre.ethers.getContractFactory("NFT");
   const nft = await NFT.deploy();
@@ -56,9 +47,8 @@ async function main() {
   console.log("Hero deployed to:", hero.address);
 
   // 初始化数据
-  var erc20Token = token.address;
+  var erc20Token = "0x2fC0eBefDD68134809Ee359BBC8A5576c3788120";
   var nftToken = nft.address;
-  var priceRoter = getFee.address;
   // var erc20Token = "0x28ba88F74c4257e044d426a1e9E586024AA90c17";
   // var nftToken = "0x03960BF2C1074c915a86618433f1E580C3cbfA59";
   // var priceRoter = "0xC9d4412910DBB03F7fF854cE3F1a9c1f3ebCAf85";
@@ -72,20 +62,15 @@ async function main() {
   // await setGameTokenTx.wait();
   
   /**box */
-  const setBoxErc20Tx = await box.setERC20Addr(erc20Token);
-  await setBoxErc20Tx.wait();
+ 
   const setBoxNftTx = await box.setNftToken(nftToken);
   await setBoxNftTx.wait();
   const setBoxsetHeroTx = await box.setHero(hero.address);
   await setBoxsetHeroTx.wait();
-  const setBoxsetRouterTx = await box.setRouter(priceRoter);
-  await setBoxsetRouterTx.wait();
   const setBoxSetGameTx = await box.setGame(game.address);
   await setBoxSetGameTx.wait();
   console.log("setBox success");
   /** game */
-  const setGameRouterAddressTx = await game.setRouterAddress(priceRoter);
-  await setGameRouterAddressTx.wait();
   const setGameerc20TokenTx = await game.setErc20(erc20Token);
   await setGameerc20TokenTx.wait();
   const setsetMonsterTx = await game.setMonster(monster.address);
@@ -117,8 +102,6 @@ async function main() {
   /** Market */
   const setMarksetErc20AddrTx = await market.setErc20Addr(erc20Token);
   await setMarksetErc20AddrTx.wait();
-  const setMarksetRouterAddrTx = await market.setRouterAddr(priceRoter);
-  await setMarksetRouterAddrTx.wait();
   const setMarksetNFTAddrTx = await market.setNFTAddr(nftToken);
   await setMarksetNFTAddrTx.wait();
   const setMarksetGameTx = await market.setGame(game.address);
@@ -132,14 +115,24 @@ async function main() {
   await setHerosetERC20Tx.wait();
   console.log("setHeroset success");
 
-  /** GetFee */
-  const setTokenGetFeeTx = await getFee.setTokenddress(erc20Token);
-  await setTokenGetFeeTx.wait();
-  const setUsdtGetFeeTx = await getFee.setUsdtddress("0x7ef95a0fee0dd31b22626fa2e10ee6a223f8a684");
-  await setUsdtGetFeeTx.wait();
-  const setBnbGetFeeTx = await getFee.setWbnbddress("0xae13d989dac2f0debff460ac112a837c89baa7cd");
-  await setBnbGetFeeTx.wait();
-  console.log("setGetFee success");
+
+  /** Test 测试专用配置*/
+  const setUnlockTimeTx = await market.setUnlockTime(1800);
+  await setUnlockTimeTx.wait();
+
+  const addWhiteListTx1 = await box.addWhiteList("0x511673a05De8e6CdFf5464e3490d294f21666242", true);
+  await addWhiteListTx1.wait();
+
+  const addWhiteListTx2 = await box.addWhiteList("0xA1152FC97d76a8Db0e530f0202B31e9C54801349", true);
+  await addWhiteListTx2.wait();
+
+  const setUnlockTimeTx2 = await game.setUnlockTime(600);
+  await setUnlockTimeTx2.wait();
+
+  // const setGameInfoTx =  game.setGameInfo(12*3600,5,10*10**18,100,10,25,2000*10**18);
+  // await setGameInfoTx.wait();
+
+  console.log("Test config success");
 
   // await verifyContract("contracts/Token.sol:Token", token.address);
   // await verifyContract("contracts/GetFee.sol:GetFee", getFee.address);

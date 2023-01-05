@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.11;
+pragma solidity ^0.8.17;
+
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "./GetFee.sol";
 import "./Monster.sol";
 contract Game is AccessControl,Ownable {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -15,15 +15,14 @@ contract Game is AccessControl,Ownable {
         pushTask();
         }
     
-    GetFee public getFeeRate;
-    
     IERC20 public erc20;
     Monster public _monster;
     
 
     mapping(address=>EnumerableSet.UintSet) _userTem;
     mapping(address=>EnumerableSet.UintSet) _userBackpack;
-    gameInfo private _gameInfo = gameInfo(12*3600,5,10*10**18,100,10,25,2000*10**18);
+    // gameInfo private _gameInfo = gameInfo(12*3600,5,10*10**18,100,10,25,2000*10**18); //==================== change
+    gameInfo private _gameInfo = gameInfo(1800,5,10*10**18,100,10,25,2000*10**18);
     mapping(uint256=>address) _tokenUser;
     mapping(uint256=>CardDetails) _tokenDetail;
     mapping(uint256=>mapping(uint256=>uint256)) _tokenLevel; 
@@ -115,6 +114,15 @@ contract Game is AccessControl,Ownable {
         uint256 unLkTime;
    }
 
+   function setUnlockTime(uint256 unlockTime) public onlyOwner {
+       _unlockTime = unlockTime;
+       _receiveInfo = receiveInfo(2*_unlockTime,3,7);
+   }
+
+    function setGameInfo(uint32 enlistTime,uint32 temNum,uint256 speedMoney,uint256 maxLevel,  
+            uint256 addAttr,uint256 upAttrCost,uint256 upEqCost) public onlyOwner {
+        _gameInfo = gameInfo(enlistTime,temNum,speedMoney,maxLevel,addAttr,upAttrCost,upEqCost);
+    }
 
     function rand(uint256 _length) public view returns(uint256) {
         uint256 random = uint256(keccak256(abi.encodePacked(block.number,block.difficulty, block.timestamp)));
@@ -184,9 +192,6 @@ contract Game is AccessControl,Ownable {
         emit MoveBack(tokenId,sender,2);
     }
    
-    function setRouterAddress(address _feeAddress) public onlyOwner{
-        getFeeRate = GetFee(_feeAddress);
-    }
 
     function setErc20(address addr) public onlyOwner{
         erc20 = IERC20(addr);
@@ -203,7 +208,7 @@ contract Game is AccessControl,Ownable {
         if (remainTime<=0){
             return 0;
         }
-        uint256 amounts = getFeeRate.getUsdtPrice1(_gameInfo.speedMoney);
+        uint256 amounts = _gameInfo.speedMoney;
         uint256 const = remainTime*(amounts/_gameInfo.enlistTime);
         return const;
     }
@@ -398,7 +403,7 @@ contract Game is AccessControl,Ownable {
         if (reward<=0){
             return 0;
         }
-        uint256 incomeByToken = getFeeRate.getBNBPrice1(reward);
+        uint256 incomeByToken = reward;
         uint256 amount ;
         amount = incomeByToken * _gameInfo.upAttrCost /100;
         return amount;
@@ -418,9 +423,26 @@ contract Game is AccessControl,Ownable {
     function setTokenDetailGenre(uint256 tokenId,uint32 genre)  public onlyRole(MINTER_ROLE) {
         _tokenDetail[tokenId].genre = genre;
     }
+    //=========================== add =========================
+    function setUserValidTime(uint256 index,uint256 newTime)public onlyOwner{
+        if(index==1){
+            userBnbPool[msg.sender].validTime = newTime;
+        }else{
+            userTokenPool[msg.sender].validTime = newTime;
+        }
+        
+    }
+    //=========================== add =========================
+    function setUserUnlockTime(uint256 index,uint256 newTime)public onlyOwner{
+        if(index==1){
+            userBnbPool[msg.sender].unLockTime = newTime;
+        }else{
+            userTokenPool[msg.sender].unLockTime = newTime;
+        }
+    }
 
     function getTokenDetailGenre(uint256 tokenId) view  public returns(uint256) {
-        return   _tokenDetail[tokenId].genre;
+        return _tokenDetail[tokenId].genre;
     }
 
     function getUserAddress(uint256 tokenId) view public returns(address){
