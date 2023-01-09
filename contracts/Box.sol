@@ -4,27 +4,30 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "./Game.sol";
-import "./Hero.sol";
+import "./interfaces/IHero.sol";
+import "./interfaces/IGame.sol";
 import "./NFT.sol";
-
+import "hardhat/console.sol";
 contract Box is Ownable, ReentrancyGuard{
-    constructor() {
-    }
-    mapping(uint256=>address) _boxByUser;
-    mapping(address=>uint256[]) _userBoxs;
+
+    address public bank = 0xca4cA3B126154b8952d3068Eb3498CdE8be1B025; // ====================== change
+    
     uint256 _boxId = 0;
-    uint256 _boxPrice=100*10**18;
-    Game public  _game;
-    Hero _hero = Hero(0xCDdB3Df2ecEa4A23ddf36644B82920677be3FFB2);
-    NFT public _nft = NFT(0x03960BF2C1074c915a86618433f1E580C3cbfA59);
+    // uint256 _boxPrice=100*10**18; // ===============change
+    uint256 _boxPrice=10*10**18;
+
     uint256 _lockTime = 12*3600;
     uint256 _temNum=5;
-    mapping(address => bool) public whiteList;
-    address public bank;
-    uint256 public discountNumerator = 9000;
+    uint256 public discountNumerator = 7000;
     uint256 public discountDenominator = 10000;
 
+    IGame public  _game;
+    IHero _hero = IHero(0xCDdB3Df2ecEa4A23ddf36644B82920677be3FFB2);
+    NFT public _nft = NFT(0x03960BF2C1074c915a86618433f1E580C3cbfA59);
+
+    mapping(uint256=>address) _boxByUser;
+    mapping(address=>uint256[]) _userBoxs;
+    mapping(address => bool) public whiteList;
 
     struct monsterInfo{
         uint256 rarity;
@@ -59,11 +62,16 @@ contract Box is Ownable, ReentrancyGuard{
         discountDenominator = _discountDenominator;
     }
     
-    function buyBox()  public nonReentrant payable{
+    function buyBox() public nonReentrant payable{
         uint256 price = _boxPrice;
-        if(whiteList[msg.sender]) {
+        //test network 3 main network should be 10.
+        if(whiteList[msg.sender] && _userBoxs[msg.sender].length <= 3) {
             price = _boxPrice * discountNumerator / discountDenominator;
+            uint backEth = _boxPrice - price;
+            console.log("=====back=====",backEth);
+            payable(msg.sender).transfer(backEth);
         }
+        console.log("=====price=====",price);
         payable(bank).transfer(price);
         _boxByUser[_boxId]= msg.sender;
         _userBoxs[msg.sender].push(_boxId);
@@ -74,6 +82,7 @@ contract Box is Ownable, ReentrancyGuard{
     }
 
     function buyBoxBatch(uint256 amount) public payable {
+        require(amount<=10,"Box:Max 10");
         for(uint256 i = 0; i < amount; ++i) {
             buyBox();
         }
@@ -81,7 +90,6 @@ contract Box is Ownable, ReentrancyGuard{
     
     function openBox(uint32 _index)  public {
         require(_boxByUser[_index] == msg.sender,"Insufficient permissions");
-       
         uint256 tokenId;
         uint256 nftKindId;
         uint256 monsterId;
@@ -92,10 +100,11 @@ contract Box is Ownable, ReentrancyGuard{
         
         for(uint256 i=0;i<_userBoxs[msg.sender].length;i++){
             if(_userBoxs[msg.sender][i] == _index){
-                // delete _userBoxs[msg.sender][i] ;
-                // _userBoxs[msg.sender][i] = _userBoxs[msg.sender][_userBoxs[msg.sender].length - 1];
                 _userBoxs[msg.sender][i] = _userBoxs[msg.sender][_userBoxs[msg.sender].length - 1];
                 _userBoxs[msg.sender].pop();
+                break;
+            }else{
+                revert("Box:The current box does not exist");
             }
         }
         emit OpenBox(nftKindId,tokenId,monsterId,msg.sender);
@@ -124,14 +133,18 @@ contract Box is Ownable, ReentrancyGuard{
     }
 
     function setGame(address payable _gameAddress) public onlyOwner{
-        _game = Game(_gameAddress);
+        _game = IGame(_gameAddress);
     }
 
     function setHero(address _tokenAddress)public onlyOwner{
-        _hero = Hero(_tokenAddress);
+        _hero = IHero(_tokenAddress);
     }
     function setNftToken(address _NFTToken)  public onlyOwner {
         _nft = NFT(_NFTToken);
+    }
+
+    function getBlance(address _addr) public view returns(uint){
+        return _addr.balance;
     }
  
 }

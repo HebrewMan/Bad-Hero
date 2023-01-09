@@ -6,32 +6,34 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
+import "hardhat/console.sol";
 
 // import "./INFT.sol";
 import "./Game.sol";
 
 contract Market is AccessControl,Ownable{
+
     using EnumerableSet for EnumerableSet.UintSet;
+    // uint256 _unlockTime = 86400;//==================== change
+    uint256 _unlockTime = 1 minutes;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    
+
+    Game private _game;
+    IERC20 private _erc20;
+    IERC721 public _inft;
+    stakeInfo public _stakeInfo = stakeInfo(30,50*10**18,100*10**18); 
+
+    market[] public markets;
+
+    mapping(uint256=>market) _markets;
+    mapping(uint256=>mtStakeInfo) _tokenMtStakeInfo;
+    mapping(address=>EnumerableSet.UintSet) userStakeInfo;
+    mapping(address=>EnumerableSet.UintSet) userMarkets;
+
     constructor()  {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MINTER_ROLE, msg.sender);
     }
-    IERC721 public _inft;
-    mapping(uint256=>market) _markets;
-    market[] public markets;
-    Game private _game;
-    IERC20 private _erc20;
-    // uint256 _unlockTime = 86400;//==================== change
-    uint256 _unlockTime = 1 minutes;
-    mapping(uint256=>mtStakeInfo) _tokenMtStakeInfo;
-    stakeInfo public _stakeInfo = stakeInfo(30,50*10**18,100*10**18); 
-    mapping(address=>EnumerableSet.UintSet)  userStakeInfo;
-    mapping(address=>EnumerableSet.UintSet)  userMarkets;
-
-
 
     event Shelves(uint256 indexed tokenId,uint256 indexed amount,uint256 indexed nftKindId,string name,address sender);
     event UnShelves(uint256 indexed tokenId,address sender);
@@ -78,15 +80,6 @@ contract Market is AccessControl,Ownable{
         uint256 rgTime;
         uint256 nftKindId; 
         string name; 
-    }
-
-    
-    function getUserMarkets(address addr) public view returns(uint256[] memory){
-        return userMarkets[addr].values();
-    }
-    
-    function getMarkets() view public returns(market[] memory){
-        return markets;
     }
 
     function shelves(uint256 _tokenId,uint256 _money) public{
@@ -156,16 +149,19 @@ contract Market is AccessControl,Ownable{
         // nftTransferFrom(msg.sender,address(this),_tokenId);
         uint256 money = (_game.getTokenDetails(_tokenId).nftKindId+1) * _stakeInfo.money;
         userStakeInfo[msg.sender].add(_tokenId);
+
+        console.log("=====_stakeInfo.day====",_stakeInfo.day);
+        console.log("=====_unlockTime====",_unlockTime);
+        console.log("=========",block.timestamp + _stakeInfo.day*_unlockTime);
+
         _tokenMtStakeInfo[_tokenId] = mtStakeInfo(_tokenId,block.timestamp,block.timestamp + _stakeInfo.day*_unlockTime,_stakeInfo.money+money);
         // _tokenMtStakeInfo[_tokenId] = mtStakeInfo(_tokenId,block.timestamp,block.timestamp + _unlockTime,money+_stakeInfo.addMoney);
         emit Stake(_tokenId, 1, msg.sender);
     }
 
-   
     function unStake(uint256 _tokenId) public {
         require(_game.getUserAddress(_tokenId) == msg.sender,"Illegal operation");
         require(_game.getTokenDetailGenre(_tokenId) ==1,"Wrong operation");
-        require(_tokenMtStakeInfo[_tokenId].endTime<block.timestamp,"The time is not up yet");
         require(userStakeInfo[msg.sender].contains(_tokenId) == true, "It's already decompressed");
         uint256  amount = _tokenMtStakeInfo[_tokenId].money;
         // _erc20.transfer(msg.sender, amount);
@@ -177,6 +173,13 @@ contract Market is AccessControl,Ownable{
         emit UnStake(_tokenId,amount,msg.sender);
     }
 
+    function getUserMarkets(address addr) public view returns(uint256[] memory){
+        return userMarkets[addr].values();
+    }
+    
+    function getMarkets() view public returns(market[] memory){
+        return markets;
+    }
 
     function getUnStakeInfo(uint256 _tokenId) public view returns(mtStakeInfo memory){
         return _tokenMtStakeInfo[_tokenId];
@@ -185,7 +188,6 @@ contract Market is AccessControl,Ownable{
     function getUnStakeLockTime(uint256 _tokenId) public view returns(uint256){
         return _tokenMtStakeInfo[_tokenId].endTime;
     }
-
    
     function getUnStakeMoney(uint256 _tokenId) public view returns(uint256){
         return _tokenMtStakeInfo[_tokenId].money;
@@ -213,10 +215,6 @@ contract Market is AccessControl,Ownable{
     function nftTransferFrom(address from,address to,uint256 _tokenId) internal{
         _inft.safeTransferFrom(from, to, _tokenId);
     }
-    function nftTransfer(uint256 _tokenId) internal{
-        _inft.safeTransferFrom(address(this),msg.sender, _tokenId);
-    }
-
     
     function transfer(address to,uint256 amount) public onlyOwner{
         payable(to).transfer(amount);

@@ -5,41 +5,39 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "./Monster.sol";
+import "./interfaces/IMonster.sol";
 contract Game is AccessControl,Ownable {
     using EnumerableSet for EnumerableSet.UintSet;
+
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    
+    uint32 public enemyNum = 0;
+    uint256 basicHp = 200*10**8;
+    uint256 _unlockTime = 86400;
+    uint256 public bnbPool; 
+
+    IERC20 public erc20;
+    IMonster public _monster;
+
+     // gameInfo private _gameInfo = gameInfo(12*3600,5,10*10**18,100,10,25,2000*10**18); //==================== change
+    gameInfo private _gameInfo = gameInfo(1800,5,10*10**18,100,10,25,2000*10**18);
+    receiveInfo _receiveInfo = receiveInfo(2*_unlockTime,3,7);
+    
+    mapping(address=>EnumerableSet.UintSet) _userTem;
+    mapping(address=>EnumerableSet.UintSet) _userBackpack;
+    mapping(uint256=>address) _tokenUser;
+    mapping(uint256=>CardDetails) _tokenDetail;
+    mapping(uint256=>mapping(uint256=>uint256)) _tokenLevel; 
+    mapping(address=>rewardPool) public userBnbPool;
+    mapping(address=>rewardPool) public userTokenPool;
+
+    enemyInfo[] public specialTask;
+
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MINTER_ROLE, msg.sender);
         pushTask();
-        }
-    
-    IERC20 public erc20;
-    Monster public _monster;
-    
-
-    mapping(address=>EnumerableSet.UintSet) _userTem;
-    mapping(address=>EnumerableSet.UintSet) _userBackpack;
-    // gameInfo private _gameInfo = gameInfo(12*3600,5,10*10**18,100,10,25,2000*10**18); //==================== change
-    gameInfo private _gameInfo = gameInfo(1800,5,10*10**18,100,10,25,2000*10**18);
-    mapping(uint256=>address) _tokenUser;
-    mapping(uint256=>CardDetails) _tokenDetail;
-    mapping(uint256=>mapping(uint256=>uint256)) _tokenLevel; 
-    uint256 basicHp = 200*10**8;
-    uint256 _unlockTime = 86400;
-
-    uint32 public enemyNum = 0;
-
-    mapping(address=>rewardPool[]) public _userRewardPools;  
-
-    mapping(address=>rewardPool) public userBnbPool;
-    mapping(address=>rewardPool) public userTokenPool;
-    uint256 public bnbPool; 
-
-
-    enemyInfo[] public specialTask;
-    receiveInfo _receiveInfo = receiveInfo(2*_unlockTime,3,7);
+    }
 
     event SpeedTraining(uint256 indexed tokenId,address indexed sender,uint256 needFee);
     event MoveCard(uint256 indexed tokenId,address indexed sender,uint256 mvType);
@@ -49,10 +47,10 @@ contract Game is AccessControl,Ownable {
     event MoveBack(uint256 indexed tokenId,address indexed sender,uint256 mvType);
     event Withdrawal(uint256 indexed amount,address indexed sender);
 
-    struct tokenEarnings{
-            uint256 level; 
-            uint256 income; 
-        }
+    // struct tokenEarnings{
+    //     uint256 level; 
+    //     uint256 income; 
+    // }
 
     struct CardDetails{
         uint32 genre;
@@ -114,15 +112,20 @@ contract Game is AccessControl,Ownable {
         uint256 unLkTime;
    }
 
+   modifier isteam(uint256 tokenId,address sender){
+        require(_userTem[sender].contains(tokenId) == true, "It's not no team");
+        _;
+    }
+
    function setUnlockTime(uint256 unlockTime) public onlyOwner {
        _unlockTime = unlockTime;
        _receiveInfo = receiveInfo(2*_unlockTime,3,7);
    }
 
-    function setGameInfo(uint32 enlistTime,uint32 temNum,uint256 speedMoney,uint256 maxLevel,  
-            uint256 addAttr,uint256 upAttrCost,uint256 upEqCost) public onlyOwner {
-        _gameInfo = gameInfo(enlistTime,temNum,speedMoney,maxLevel,addAttr,upAttrCost,upEqCost);
-    }
+    // function setGameInfo(uint32 enlistTime,uint32 temNum,uint256 speedMoney,uint256 maxLevel,  
+    //         uint256 addAttr,uint256 upAttrCost,uint256 upEqCost) public onlyOwner {
+    //     _gameInfo = gameInfo(enlistTime,temNum,speedMoney,maxLevel,addAttr,upAttrCost,upEqCost);
+    // }
 
     function rand(uint256 _length) public view returns(uint256) {
         uint256 random = uint256(keccak256(abi.encodePacked(block.number,block.difficulty, block.timestamp)));
@@ -192,12 +195,11 @@ contract Game is AccessControl,Ownable {
         emit MoveBack(tokenId,sender,2);
     }
    
-
     function setErc20(address addr) public onlyOwner{
         erc20 = IERC20(addr);
     }
     function setMonster(address addr) public onlyOwner{
-        _monster = Monster(addr);
+        _monster = IMonster(addr);
     }
     function setRole(address upAddress)public onlyOwner{
         _grantRole(MINTER_ROLE, upAddress);
@@ -228,7 +230,7 @@ contract Game is AccessControl,Ownable {
             }
             userBnbPool[user].reward = userBnbPool[user].reward+reward;
         }else{
-            if(userTokenPool[user].isVaild){
+            if(userTokenPool[user].isVaild){ 
                 if(userTokenPool[user].reward ==0){
                     userTokenPool[user].validTime =  block.timestamp+_receiveInfo.lockTime;
                     userTokenPool[user].unLockTime = block.timestamp+_receiveInfo.lockTime+_receiveInfo.freeDay*_unlockTime;
@@ -290,7 +292,7 @@ contract Game is AccessControl,Ownable {
     }
 
     function DisReward(address rewardAddr,uint256 reward) public onlyRole(MINTER_ROLE) {
-            addUpReward(rewardAddr,reward,2);
+        addUpReward(rewardAddr,reward,2);
     }
 
     function upLevel(uint256 _tokenId) public{
@@ -369,10 +371,7 @@ contract Game is AccessControl,Ownable {
         return tasks;
     }
 
-    modifier isteam(uint256 tokenId,address sender){
-        require(_userTem[sender].contains(tokenId) == true, "It's not no team");
-        _;
-    }
+    
 
     function isBack(uint256 tokenId,address sender) public view returns(bool) {
         require(_userBackpack[sender].contains(tokenId) == true, "It's not to back");
@@ -423,23 +422,6 @@ contract Game is AccessControl,Ownable {
     function setTokenDetailGenre(uint256 tokenId,uint32 genre)  public onlyRole(MINTER_ROLE) {
         _tokenDetail[tokenId].genre = genre;
     }
-    //=========================== add =========================
-    function setUserValidTime(uint256 index,uint256 newTime)public onlyOwner{
-        if(index==1){
-            userBnbPool[msg.sender].validTime = newTime;
-        }else{
-            userTokenPool[msg.sender].validTime = newTime;
-        }
-        
-    }
-    //=========================== add =========================
-    function setUserUnlockTime(uint256 index,uint256 newTime)public onlyOwner{
-        if(index==1){
-            userBnbPool[msg.sender].unLockTime = newTime;
-        }else{
-            userTokenPool[msg.sender].unLockTime = newTime;
-        }
-    }
 
     function getTokenDetailGenre(uint256 tokenId) view  public returns(uint256) {
         return _tokenDetail[tokenId].genre;
@@ -461,18 +443,18 @@ contract Game is AccessControl,Ownable {
         return _userBackpack[sender].values();
     }
    
-
     receive() external payable { 
     	bnbPool += msg.value;
 	}
 
-    function getBalance() public view returns(uint256){
-        return address(this).balance;
-    }
-    function rechargeBnb() payable public{
-        bnbPool += msg.value;
-        payable(msg.sender).transfer(msg.value);
-    }
+    // function getBalance() public view returns(uint256){
+    //     return address(this).balance;
+    // }
+
+    // function rechargeBnb() payable public{
+    //     bnbPool += msg.value;
+    //     payable(msg.sender).transfer(msg.value);
+    // }
 
      function withdrawal(address addr,uint256 amount) public onlyOwner returns(bool){
         bnbPool = bnbPool - amount;

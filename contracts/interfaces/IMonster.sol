@@ -11,7 +11,7 @@ interface IMonster {
     /**
      * @dev Returns the amount of tokens in existence.
      */
-    function fighting(uint256 tokenId,uint256 enemyId) external view returns (bool,uint256,uint256);
+    function fighting(uint256 tkId,uint256 enemyId,address addr)  external view returns (bool,uint256,uint256,uint256,uint256);
 
-    function DoTask(uint256 tokenId,uint256 odds,uint256 basicReward )  external view returns(bool,uint256,uint256);
+    function DoTask(uint256 tokenId,uint256 odds,uint256 basicReward,address addr )  external view returns(bool,uint256,uint256,uint256);
 }

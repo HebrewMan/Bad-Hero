@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./IPancakeRouter01.sol";
 import "./NFT.sol";
 import "./Game.sol";
 import "./Hero.sol";
@@ -11,7 +10,7 @@ contract Arena is Ownable{
     uint256 public arenaPool = 0; 
     uint256 public arenaNumb; 
     uint256 public arenaOpneTime ; 
-    uint256 public weekOpneTime ; 
+    uint256 public weekOpenTime; 
     uint256 public weekCyle =  7*86400; 
     uint256 public arenaCyle =  86400; 
     uint256 public weekRound=0; 
@@ -35,8 +34,8 @@ contract Arena is Ownable{
 
     constructor() {
         initArRewardSet();
-        arenaOpneTime = 1652054400;
-        weekOpneTime = 1651968000 + weekCyle;
+        arenaOpneTime = 1673002049;
+        weekOpenTime = 1673002049 + weekCyle;
     }
    
     event JoinArena(uint256 indexed tokenId,uint256 indexed nper,uint256 indexed wins,address sender);
@@ -131,12 +130,12 @@ contract Arena is Ownable{
     
     function doWeeklyTasks() public{
         require(isJoinWkTask(weekRound,msg.sender) == false,"Have attended");
-        require(weekOpneTime>=block.timestamp,"The assignment for this week is over");
+        require(weekOpenTime>=block.timestamp,"The assignment for this week is over");
         _weekFightUsers[weekRound].push(msg.sender);
         emit  DoWeekTask(weekRound,msg.sender);
     }
 
-    function isJoinWkTask(uint256 wkRound,address sender) view public returns(bool){
+    function isJoinWkTask(uint256 wkRound,address sender)public view returns(bool){
        address[] memory addrs =  _weekFightUsers[wkRound];
        bool isJoin;
        for (uint256 i = 0; i < addrs.length; i++) {
@@ -165,17 +164,17 @@ contract Arena is Ownable{
         uint256 joins = _weekFightUsers[weekRound].length;
         bool isSuccess = false;
         
-        require(weekOpneTime<block.timestamp, "open Week lottery Time is not");
+        require(weekOpenTime<block.timestamp, "open Week lottery Time is not");
         if(_weekFighting.parame<=joins){
             _weekFighting.parame += _weekFighting.parame*_weekFighting.parameRate/100;
             isSuccess = true;
         }else{
             _weekFighting.parame -= _weekFighting.parame*_weekFighting.parameRate/100;
         }
-        wkLottory[weekRound] = weekLottery(weekRound,_weekFighting.successRate,isSuccess,weekOpneTime);
+        wkLottory[weekRound] = weekLottery(weekRound,_weekFighting.successRate,isSuccess,weekOpenTime);
         weekRound +=1;
-        weekOpneTime += weekCyle;
-        emit OpenWeekTask(weekRound,weekOpneTime);
+        weekOpenTime += weekCyle;
+        emit OpenWeekTask(weekRound,weekOpenTime);
     }
     
     
@@ -216,7 +215,7 @@ contract Arena is Ownable{
     function setErc20(address _erc20Address) public onlyOwner{
         erc20 = IERC20(_erc20Address);
     }
-    
+
     function setHero(address _Address) public onlyOwner{
         _hero = Hero(_Address);
     }

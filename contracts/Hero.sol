@@ -11,16 +11,17 @@ contract Hero is Ownable{
         initStart();
     }
     
-    IERC20 public erc20;
-    
     uint256 _upEqCost = 1000*10**18;     
+    
+    IERC20 public erc20;
+    Game  public  _game;
+    
     mapping(address=>heroAttribute[]) _userHero; 
     mapping(uint64=>monsterInfo[]) _monsters;
     mapping(uint256=> nftKind) _nftKinds;
     mapping(uint32=>eqAttribute[]) _equipment; 
     mapping(uint32=>string) _equipmentInfo; 
 
-    Game  public  _game;
     struct heroAttribute{
         uint32 eqType;
         uint32 level;

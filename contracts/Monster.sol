@@ -2,8 +2,10 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./Hero.sol";
-import "./Game.sol";
+
+import "./interfaces/IHero.sol";
+import "./interfaces/IGame.sol";
+
 contract Monster is Ownable  {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     constructor()  {
@@ -13,9 +15,11 @@ contract Monster is Ownable  {
     enemyInfo[] public enemys;
     uint32 enemyNum;
     uint256 basicHp = 200*10**8;
-    Hero public _hero;
-    Game public _game;
-    uint256 _unlockTime = 86400;
+    IHero public _hero;
+    IGame public _game;
+    // uint256 _unlockTime = 86400;
+    uint256 _unlockTime = 3600;
+
    
     event Fighting(bool isSuccess,uint256 indexed fightType,uint256 indexed sHp,uint256  addXp,uint256 indexed reward);
     event Test(bool isSuccess,uint256 indexed number,uint256 indexed suc);
@@ -73,10 +77,16 @@ contract Monster is Ownable  {
         uint256 totalXp;
         uint256 validXp;
     } 
-    struct tokenEarnings{
-            uint256 level; 
-            uint256 income; 
-        }
+    // struct tokenEarnings{
+    //         uint256 level; 
+    //         uint256 income; 
+    // }
+
+    modifier isFullHp(uint256 tokenId){
+        uint256 tokenHp= getHp(tokenId);
+        require(tokenHp >= basicHp," Hp Is no full");
+        _;
+    }
     function rand(uint256 _length) public view returns(uint256) {
         uint256 random = uint256(keccak256(abi.encodePacked(block.difficulty, block.timestamp)));
         return random%_length+1;
@@ -215,24 +225,18 @@ contract Monster is Ownable  {
     }
 
     function getRgTime(uint256 hp) view internal returns(uint256){
-        return hp*_unlockTime/basicHp;
+        return hp*_unlockTime/basicHp; // ===================change
     }
     
-    
-    modifier isFullHp(uint256 tokenId){
-        uint256 tokenHp= getHp(tokenId);
-        require(tokenHp >= basicHp," Hp Is no full");
-        _;
-    }
    
-    function rgHp(uint256 useTime) view public returns(uint256 hp){
+    function rgHp(uint256 useTime)public view returns(uint256 hp){
         uint256 rate = basicHp/_unlockTime;
         return basicHp - rate*useTime;
     }
     function setGame(address payable _token) public onlyOwner{
-        _game = Game(_token);
+        _game = IGame(_token);
     }
     function setHero(address _token) public onlyOwner{
-        _hero = Hero(_token);
+        _hero = IHero(_token);
     }
 }
