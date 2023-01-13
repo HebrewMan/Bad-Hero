@@ -6,26 +6,23 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "hardhat/console.sol";
-
-// import "./INFT.sol";
-import "./Game.sol";
+import "./interfaces/IGame.sol";
 
 contract Market is AccessControl,Ownable{
 
     using EnumerableSet for EnumerableSet.UintSet;
-    // uint256 _unlockTime = 86400;//==================== change
-    uint256 _unlockTime = 1 minutes;
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    uint256 public unStakeTime = 86400;
+    uint256 public fee = 5;
+    bytes32 constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    Game private _game;
-    IERC20 private _erc20;
-    IERC721 public _inft;
-    stakeInfo public _stakeInfo = stakeInfo(30,50*10**18,100*10**18); 
+    IGame public Game;
+    IERC20 public Erc20;
+    IERC721 public NFT;
+    stakeInfo public StakeInfo = stakeInfo(30,20*10000*10**18,100*10**18); 
 
-    market[] public markets;
+    market[] markets;
 
-    mapping(uint256=>market) _markets;
+    mapping(uint256=>market) _marketInfo;
     mapping(uint256=>mtStakeInfo) _tokenMtStakeInfo;
     mapping(address=>EnumerableSet.UintSet) userStakeInfo;
     mapping(address=>EnumerableSet.UintSet) userMarkets;
@@ -82,24 +79,32 @@ contract Market is AccessControl,Ownable{
         string name; 
     }
 
+    function setStakeInfo(uint _reward)external onlyOwner{
+        StakeInfo.money = _reward;
+    }
+
+    function setFee(uint _fee)external onlyOwner{
+        fee = _fee;
+    }
+
     function shelves(uint256 _tokenId,uint256 _money) public{
-        require(_game.getUserAddress(_tokenId)==msg.sender,"Illegal operation");
-        require(_game.getTokenDetailGenre(_tokenId) ==0,"Illegal 0 operation");
+        require(Game.getUserAddress(_tokenId)==msg.sender,"Illegal operation");
+        require(Game.getTokenDetails(_tokenId).genre == 0,"Illegal 0 operation");
         cardDetails memory _nftDetails;
-        (_nftDetails.level,_nftDetails.ce,_nftDetails.xp,_nftDetails.armor,_nftDetails.luk,_nftDetails.rgTime) =  _game.getTokenDetail(_tokenId);
-        _markets[_tokenId] = market(_tokenId,_nftDetails.hp,_nftDetails.level,_nftDetails.xp,_nftDetails.ce,_nftDetails.armor,_nftDetails.luk,_money,_nftDetails.name,msg.sender);
-        _game.setTokenDetailGenre(_tokenId,2);
-        _game.moveBack(_tokenId,msg.sender);
-        _inft.transferFrom(msg.sender,address(this), _tokenId);
-        markets.push(_markets[_tokenId]);
+        (_nftDetails.level,_nftDetails.ce,_nftDetails.xp,_nftDetails.armor,_nftDetails.luk,_nftDetails.rgTime) =  Game.getTokenDetail(_tokenId);
+        _marketInfo[_tokenId] = market(_tokenId,_nftDetails.hp,_nftDetails.level,_nftDetails.xp,_nftDetails.ce,_nftDetails.armor,_nftDetails.luk,_money,_nftDetails.name,msg.sender);
+        Game.setTokenDetailGenre(_tokenId,2);
+        Game.moveBack(_tokenId,msg.sender);
+        NFT.transferFrom(msg.sender,address(this), _tokenId);
+        markets.push(_marketInfo[_tokenId]);
         userMarkets[msg.sender].add(_tokenId);
-        emit Shelves(_tokenId,_money, _game.getTokenDetails(_tokenId).nftKindId, _game.getTokenDetails(_tokenId).name,msg.sender);
+        emit Shelves(_tokenId,_money, Game.getTokenDetails(_tokenId).nftKindId, Game.getTokenDetails(_tokenId).name,msg.sender);
     }
     
     function unShelves(uint256 _tokenId) public {
-        require(_game.getUserAddress(_tokenId)==msg.sender,"Illegal operation");
-        require(_game.getTokenDetailGenre(_tokenId) ==2,"Illegal 2 operation");
-        _game.setTokenDetailGenre(_tokenId,0);
+        require(Game.getUserAddress(_tokenId)==msg.sender,"Illegal operation");
+        require(Game.getTokenDetails(_tokenId).genre ==2,"Illegal 2 operation");
+        Game.setTokenDetailGenre(_tokenId,0);
         for(uint256 i=0;i<markets.length;i++){
             if (markets[i].tokenId==_tokenId){
                 markets[i] = markets[markets.length - 1];
@@ -107,20 +112,20 @@ contract Market is AccessControl,Ownable{
                 break;
             }
         }
-        _game.addBack(_tokenId,msg.sender);
+        Game.addBack(_tokenId,msg.sender);
         nftTransferFrom(address(this),msg.sender,_tokenId);
-        delete _markets[_tokenId];
+        delete _marketInfo[_tokenId];
         userMarkets[msg.sender].remove(_tokenId);
         emit UnShelves(_tokenId,msg.sender);
     }
     
     function buyNft(uint256 _tokenId) public{
-        address nftOwner = _game.getUserAddress(_tokenId);
-        uint256 money = _markets[_tokenId].price;
+        address nftOwner = Game.getUserAddress(_tokenId);
+        uint256 money = _marketInfo[_tokenId].price;
         require(nftOwner!=msg.sender,"You can't buy your own sale");
         nftTransferFrom(address(this),msg.sender, _tokenId);
-        uint256 fee=_markets[_tokenId].price*5/100;
-        uint256 ownerMoney = _markets[_tokenId].price - fee;
+        uint256 _fee=_marketInfo[_tokenId].price*fee/100;
+        uint256 ownerMoney = _marketInfo[_tokenId].price - _fee;
         for(uint256 i=0;i<markets.length;i++){
             if (markets[i].tokenId==_tokenId){
                 markets[i] = markets[markets.length - 1];
@@ -128,49 +133,65 @@ contract Market is AccessControl,Ownable{
                 break;
             }
         }
-        _erc20.transferFrom(msg.sender, nftOwner,ownerMoney);
-        _erc20.transferFrom(msg.sender, address(this),fee);
-        _game.editCardDetails(_tokenId, msg.sender);
-        _game.setTokenDetailGenre(_tokenId, 0);
-        _game.addBack(_tokenId,msg.sender);
-        delete _markets[_tokenId];
+        Erc20.transferFrom(msg.sender, nftOwner,ownerMoney);
+        Erc20.transferFrom(msg.sender, address(this),_fee);
+        Game.editCardDetails(_tokenId, msg.sender);
+        Game.setTokenDetailGenre(_tokenId, 0);
+        Game.addBack(_tokenId,msg.sender);
+        delete _marketInfo[_tokenId];
         userMarkets[nftOwner].remove(_tokenId);
         emit BuyBft(_tokenId,money,nftOwner, msg.sender);
     }
 
     function stake(uint256 _tokenId) public{
-        require(_game.getUserAddress(_tokenId)==msg.sender,"Illegal operation");
-        require(userStakeInfo[msg.sender].contains(_tokenId) == false, "It's already pledged");
-        require(_game.isBack(_tokenId,msg.sender),"not in back");
-        require(_game.getTokenDetails(_tokenId).unLockTime<=block.timestamp,"Haven't unlock");
-        require(_game.getTokenDetailGenre(_tokenId) ==0,"Illegal 0 operation");
-        _game.setTokenDetailGenre(_tokenId, 1);
-        _inft.transferFrom(msg.sender,address(this), _tokenId);
+        require(Game.getUserAddress(_tokenId)==msg.sender,"Illegal operation");
+        require(!userStakeInfo[msg.sender].contains(_tokenId), "It's already pledged");
+        require(Game.isBack(_tokenId,msg.sender),"not in back");
+        require(Game.getTokenDetails(_tokenId).unLockTime<=block.timestamp,"Haven't unlock");
+        require(Game.getTokenDetails(_tokenId).genre ==0,"Illegal 0 operation");
+        Game.setTokenDetailGenre(_tokenId, 1);
+        NFT.transferFrom(msg.sender,address(this), _tokenId);
         // nftTransferFrom(msg.sender,address(this),_tokenId);
-        uint256 money = (_game.getTokenDetails(_tokenId).nftKindId+1) * _stakeInfo.money;
+        uint256 money = getNFTKindRewards(_tokenId);
         userStakeInfo[msg.sender].add(_tokenId);
 
-        console.log("=====_stakeInfo.day====",_stakeInfo.day);
-        console.log("=====_unlockTime====",_unlockTime);
-        console.log("=========",block.timestamp + _stakeInfo.day*_unlockTime);
+        _tokenMtStakeInfo[_tokenId] = mtStakeInfo(_tokenId,block.timestamp,block.timestamp + StakeInfo.day*unStakeTime,StakeInfo.money+money);
 
-        _tokenMtStakeInfo[_tokenId] = mtStakeInfo(_tokenId,block.timestamp,block.timestamp + _stakeInfo.day*_unlockTime,_stakeInfo.money+money);
-        // _tokenMtStakeInfo[_tokenId] = mtStakeInfo(_tokenId,block.timestamp,block.timestamp + _unlockTime,money+_stakeInfo.addMoney);
         emit Stake(_tokenId, 1, msg.sender);
     }
 
     function unStake(uint256 _tokenId) public {
-        require(_game.getUserAddress(_tokenId) == msg.sender,"Illegal operation");
-        require(_game.getTokenDetailGenre(_tokenId) ==1,"Wrong operation");
-        require(userStakeInfo[msg.sender].contains(_tokenId) == true, "It's already decompressed");
+        require(_tokenMtStakeInfo[_tokenId].endTime <= block.timestamp,"Market:wrong endTime");
+        require(Game.getUserAddress(_tokenId) == msg.sender,"Illegal operation");
+        require(Game.getTokenDetails(_tokenId).genre == 1,"Wrong operation");
+        require(userStakeInfo[msg.sender].contains(_tokenId), "It's already decompressed");
         uint256  amount = _tokenMtStakeInfo[_tokenId].money;
-        // _erc20.transfer(msg.sender, amount);
-        _game.setTokenDetailGenre(_tokenId, 0);
-        //address user,uint256 reward,uint256 addType
-        _game.addTokenReward(msg.sender,amount);
-        _inft.transferFrom(address(this),msg.sender, _tokenId);
+        // Erc20.transfer(msg.sender, amount);
+        Game.setTokenDetailGenre(_tokenId, 0);
+        Game.addTokenReward(msg.sender,amount);
+        NFT.transferFrom(address(this),msg.sender, _tokenId);
         userStakeInfo[msg.sender].remove(_tokenId);
         emit UnStake(_tokenId,amount,msg.sender);
+    }
+
+    function setErc20Addr(address _tokenAddr) public onlyOwner{
+        Erc20 = IERC20(_tokenAddr);
+    }
+
+    function setNFTAddr(address _tokenAddr) public onlyOwner{
+        NFT = IERC721(_tokenAddr);
+    }
+
+    function setGame(address payable GameAddress) public onlyOwner{
+        Game = IGame(GameAddress);
+    }
+
+    function setUnStakeTime(uint256 _unStakeTime) public onlyOwner {
+        unStakeTime = _unStakeTime;
+    }
+
+    function getNFTKindRewards(uint256 _tokenId) public view returns(uint256){
+        return (Game.getTokenDetails(_tokenId).nftKindId+1) * StakeInfo.money;
     }
 
     function getUserMarkets(address addr) public view returns(uint256[] memory){
@@ -184,53 +205,27 @@ contract Market is AccessControl,Ownable{
     function getUnStakeInfo(uint256 _tokenId) public view returns(mtStakeInfo memory){
         return _tokenMtStakeInfo[_tokenId];
     }
-   
-    function getUnStakeLockTime(uint256 _tokenId) public view returns(uint256){
-        return _tokenMtStakeInfo[_tokenId].endTime;
-    }
-   
-    function getUnStakeMoney(uint256 _tokenId) public view returns(uint256){
-        return _tokenMtStakeInfo[_tokenId].money;
-    }
 
     function getUserStakes(address addr) public view returns(uint256[] memory){
         return userStakeInfo[addr].values();
     }
-
    
     function getMarketInfo(uint256 tokenId) public view returns(market memory){
-        return _markets[tokenId];
+        return _marketInfo[tokenId];
     }
 
-    function setErc20Addr(address _tokenAddr) public onlyOwner{
-        _erc20 = IERC20(_tokenAddr);
-    }
-
-
-    function setNFTAddr(address _tokenAddr) public onlyOwner{
-        _inft = IERC721(_tokenAddr);
-    }
-
-    
     function nftTransferFrom(address from,address to,uint256 _tokenId) internal{
-        _inft.safeTransferFrom(from, to, _tokenId);
+        NFT.safeTransferFrom(from, to, _tokenId);
     }
     
-    function transfer(address to,uint256 amount) public onlyOwner{
+    function withdrawal(address to,uint256 amount) public onlyOwner{
         payable(to).transfer(amount);
     }
 
-    function transferERC20(address token,address to,uint256 amount) public onlyOwner{
-        IERC20  _tokenAddr = IERC20(token);
-        // _tokenAddr.approve(address(this), amount);
+    function withdrawalToken(address token,address to,uint256 amount) public onlyOwner{
+        IERC20 _tokenAddr = IERC20(token);
         _tokenAddr.transfer(to, amount);
     }
 
-    function setGame(address payable _gameAddress) public onlyOwner{
-        _game = Game(_gameAddress);
-    }
-
-    function setUnlockTime(uint256 unlockTime) public onlyOwner {
-        _unlockTime = unlockTime;
-    }
+    
 }

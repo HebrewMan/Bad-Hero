@@ -2,31 +2,29 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./interfaces/IHero.sol";
 import "./interfaces/IGame.sol";
 import "./NFT.sol";
-import "hardhat/console.sol";
 contract Box is Ownable, ReentrancyGuard{
 
-    address public bank = 0xca4cA3B126154b8952d3068Eb3498CdE8be1B025; // ====================== change
-    
-    uint256 _boxId = 0;
-    // uint256 _boxPrice=100*10**18; // ===============change
-    uint256 _boxPrice=10*10**18;
-
+    using EnumerableSet for EnumerableSet.UintSet;
+    uint256 _boxId;
+    uint256 boxPrice=1*10**18;
     uint256 _lockTime = 12*3600;
-    uint256 _temNum=5;
+    uint256 _temNum = 5;
     uint256 public discountNumerator = 7000;
     uint256 public discountDenominator = 10000;
+    address public bank = 0xca4cA3B126154b8952d3068Eb3498CdE8be1B025; // ====================== change
 
-    IGame public  _game;
-    IHero _hero = IHero(0xCDdB3Df2ecEa4A23ddf36644B82920677be3FFB2);
-    NFT public _nft = NFT(0x03960BF2C1074c915a86618433f1E580C3cbfA59);
+    IGame public Game;
+    IHero public Hero = IHero(0xCDdB3Df2ecEa4A23ddf36644B82920677be3FFB2);
+    NFT public Nft = NFT(0x03960BF2C1074c915a86618433f1E580C3cbfA59);
 
-    mapping(uint256=>address) _boxByUser;
-    mapping(address=>uint256[]) _userBoxs;
+    mapping(uint256 => address) _boxByUser;
+    mapping(address => EnumerableSet.UintSet) _userBoxs;
+    mapping(address => uint256)public userBoughtBoxs;
     mapping(address => bool) public whiteList;
 
     struct monsterInfo{
@@ -56,29 +54,24 @@ contract Box is Ownable, ReentrancyGuard{
     function setBank(address _bank) public onlyOwner {
         bank = _bank;
     }
-
-    function setRate(uint256 _discountNumerator, uint256 _discountDenominator) public onlyOwner {
-        discountNumerator = _discountNumerator;
-        discountDenominator = _discountDenominator;
-    }
     
     function buyBox() public nonReentrant payable{
-        uint256 price = _boxPrice;
+        uint256 price = boxPrice;
         //test network 3 main network should be 10.
-        if(whiteList[msg.sender] && _userBoxs[msg.sender].length <= 3) {
-            price = _boxPrice * discountNumerator / discountDenominator;
-            uint backEth = _boxPrice - price;
-            console.log("=====back=====",backEth);
+        require(msg.value >= boxPrice,"Msg.value Insufficient funds");
+        if(whiteList[msg.sender] && userBoughtBoxs[msg.sender] < 10) {
+            price = boxPrice * discountNumerator / discountDenominator;
+            uint backEth = boxPrice - price;
             payable(msg.sender).transfer(backEth);
         }
-        console.log("=====price=====",price);
         payable(bank).transfer(price);
+        userBoughtBoxs[msg.sender]++;
         _boxByUser[_boxId]= msg.sender;
-        _userBoxs[msg.sender].push(_boxId);
+        _userBoxs[msg.sender].add(_boxId);
         _boxId += 1;
 
-        _hero.initHeroEq(msg.sender);
-        emit BuyBox(1,uint256(_boxPrice),msg.sender);
+        Hero.initHeroEq(msg.sender);
+        emit BuyBox(1,uint256(boxPrice),msg.sender);
     }
 
     function buyBoxBatch(uint256 amount) public payable {
@@ -90,24 +83,18 @@ contract Box is Ownable, ReentrancyGuard{
     
     function openBox(uint32 _index)  public {
         require(_boxByUser[_index] == msg.sender,"Insufficient permissions");
+        require(_userBoxs[msg.sender].contains(_index), "Box:current index id does not exist.");
         uint256 tokenId;
         uint256 nftKindId;
         uint256 monsterId;
-        monsterInfo memory _monster ;
-        (nftKindId,monsterId,_monster.ce,_monster.armor,_monster.luk,_monster.name) = _hero.getMonsterType();
-        tokenId = _nft.safeMint(msg.sender);
-        _game.createCard(tokenId,_monster.ce,_monster.armor,_monster.luk,_lockTime, nftKindId,_monster.name,_temNum,msg.sender);
+        monsterInfo memory _monster;
+        (nftKindId,monsterId,_monster.ce,_monster.armor,_monster.luk,_monster.name) = Hero.getMonsterType();
+        tokenId = Nft.safeMint(msg.sender);
+        Game.createCard(tokenId,_monster.ce,_monster.armor,_monster.luk,_lockTime, nftKindId,_monster.name,_temNum,msg.sender);
         
-        for(uint256 i=0;i<_userBoxs[msg.sender].length;i++){
-            if(_userBoxs[msg.sender][i] == _index){
-                _userBoxs[msg.sender][i] = _userBoxs[msg.sender][_userBoxs[msg.sender].length - 1];
-                _userBoxs[msg.sender].pop();
-                break;
-            }else{
-                revert("Box:The current box does not exist");
-            }
-        }
+        _userBoxs[msg.sender].remove(_index);
         emit OpenBox(nftKindId,tokenId,monsterId,msg.sender);
+        
     }
 
     function openBoxBatch(uint32[] memory indexs) public {
@@ -116,35 +103,33 @@ contract Box is Ownable, ReentrancyGuard{
         }
     }
 
-    function getUserBoxs(address sender) view public returns(uint256[] memory){
-        return _userBoxs[sender];
+    //set box price
+    function setBoxPrice(uint256 _boxPrice) public onlyOwner{
+        boxPrice = _boxPrice;
     }
 
-    function setBoxPrice(uint256 boxPrice) public onlyOwner{
-        _boxPrice = boxPrice;
+    function setGame(address payable _addr) public onlyOwner{
+        Game = IGame(_addr);
     }
 
-    function getBoxPrice() public view returns(uint256 amounts){
-        amounts = _boxPrice;
-    }
-
-    function withdrawal(address tokenAddress,address from,address to,uint256 amount) public onlyOwner{
-        IERC20(tokenAddress).transferFrom(from, to, amount);
-    }
-
-    function setGame(address payable _gameAddress) public onlyOwner{
-        _game = IGame(_gameAddress);
+    function setRate(uint256 _discountNumerator, uint256 _discountDenominator) public onlyOwner {
+        discountNumerator = _discountNumerator;
+        discountDenominator = _discountDenominator;
     }
 
     function setHero(address _tokenAddress)public onlyOwner{
-        _hero = IHero(_tokenAddress);
+        Hero = IHero(_tokenAddress);
     }
     function setNftToken(address _NFTToken)  public onlyOwner {
-        _nft = NFT(_NFTToken);
+        Nft = NFT(_NFTToken);
     }
 
-    function getBlance(address _addr) public view returns(uint){
-        return _addr.balance;
+    function getBoxPrice() public view returns(uint256){
+        return boxPrice;
+    }
+
+    function getUserBoxs(address sender)public view  returns(uint256[] memory){
+        return _userBoxs[sender].values();
     }
  
 }

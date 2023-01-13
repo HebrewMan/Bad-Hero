@@ -6,21 +6,17 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IHero.sol";
 import "./interfaces/IGame.sol";
 
-contract Monster is Ownable  {
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    constructor()  {
-        initEney();
-    }
-
-    enemyInfo[] public enemys;
+contract Monster is Ownable{
     uint32 enemyNum;
+    uint256 _unlockTime = 86400;
     uint256 basicHp = 200*10**8;
-    IHero public _hero;
-    IGame public _game;
-    // uint256 _unlockTime = 86400;
-    uint256 _unlockTime = 3600;
 
-   
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+
+    IHero public Hero;
+    IGame public Game;
+    enemyInfo[] public enemys;
+
     event Fighting(bool isSuccess,uint256 indexed fightType,uint256 indexed sHp,uint256  addXp,uint256 indexed reward);
     event Test(bool isSuccess,uint256 indexed number,uint256 indexed suc);
     
@@ -34,14 +30,14 @@ contract Monster is Ownable  {
         string  pic;
     }
     struct combatOdds{
-            uint256 addReward;
-            uint256 addHp;
-            uint256 addXp;
-            uint256 addPower;
-            uint256 addDefens;
-            uint256 addLuk;
-            uint256 injury;
-        } 
+        uint256 addReward;
+        uint256 addHp;
+        uint256 addXp;
+        uint256 addPower;
+        uint256 addDefens;
+        uint256 addLuk;
+        uint256 injury;
+    } 
     struct figInfo{
         uint256 succesRate;
         uint256 totalSuc;
@@ -50,21 +46,6 @@ contract Monster is Ownable  {
         uint256 sHp;
         bool isSuccess;
     }
-    struct CardDetails{
-        uint32 genre;
-        uint256 tokenId;
-        uint256 hp;
-        uint256 level;
-        uint256 xp;
-        uint256 ce;
-        uint256 armor;
-        uint256 luk;
-        uint256 unLockTime;
-        uint256 rgTime;
-        uint256 nftKindId; 
-        string name; 
-    }
-    
     struct rewardPool{
         uint32 id; 
         uint32 rewardType; 
@@ -77,14 +58,13 @@ contract Monster is Ownable  {
         uint256 totalXp;
         uint256 validXp;
     } 
-    // struct tokenEarnings{
-    //         uint256 level; 
-    //         uint256 income; 
-    // }
+
+    constructor()  {
+        initEney();
+    }
 
     modifier isFullHp(uint256 tokenId){
-        uint256 tokenHp= getHp(tokenId);
-        require(tokenHp >= basicHp," Hp Is no full");
+        require(getHp(tokenId) >= basicHp," Hp Is no full");
         _;
     }
     function rand(uint256 _length) public view returns(uint256) {
@@ -95,13 +75,13 @@ contract Monster is Ownable  {
     function fighting(uint256 tkId,uint256 enemyId,address addr) public view  isFullHp(tkId) returns(bool,uint256,uint256,uint256,uint256){
         combatOdds memory _combatOdds;
         
-        (_combatOdds.addPower,_combatOdds.addDefens,_combatOdds.addXp,_combatOdds.addLuk,_combatOdds.injury,_combatOdds.addReward) = _hero.getCombatOdds(tkId,addr);
+        (_combatOdds.addPower,_combatOdds.addDefens,_combatOdds.addXp,_combatOdds.addLuk,_combatOdds.injury,_combatOdds.addReward) = Hero.getCombatOdds(tkId,addr);
         figInfo memory _figInfo ;
         _figInfo.succesRate = _combatOdds.addPower/100;
-        enemyInfo memory _enemy =getEnemyById(enemyId);
+        enemyInfo memory _enemy = getEnemyById(enemyId);
         _figInfo.totalSuc = _enemy.odds + _figInfo.succesRate;
         CardDetails memory _carDetail;
-        (_carDetail.level,_carDetail.ce,,_carDetail.armor,_carDetail.luk,) = _game.getTokenDetail(tkId);
+        (_carDetail.level,_carDetail.ce,,_carDetail.armor,_carDetail.luk,) = Game.getTokenDetail(tkId);
         uint256 randNumber = rand(100);
         
         if (randNumber>_figInfo.totalSuc){
@@ -133,12 +113,12 @@ contract Monster is Ownable  {
 
     function DoTask(uint256 tokenId,uint256 odds,uint256 basicReward,address addr ) public view isFullHp(tokenId)  returns(bool,uint256,uint256,uint256){
         combatOdds memory _combatOdds;
-        (_combatOdds.addPower,_combatOdds.addDefens,_combatOdds.addXp,_combatOdds.addLuk,_combatOdds.injury,_combatOdds.addReward)  = _hero.getCombatOdds(tokenId,addr);
+        (_combatOdds.addPower,_combatOdds.addDefens,_combatOdds.addXp,_combatOdds.addLuk,_combatOdds.injury,_combatOdds.addReward)  = Hero.getCombatOdds(tokenId,addr);
         figInfo memory _figInfo ;
         _figInfo.succesRate = _combatOdds.addPower/100;
         _figInfo.totalSuc = odds + _figInfo.succesRate;
         CardDetails memory _carDetail;
-        (_carDetail.level,_carDetail.ce,_carDetail.xp,_carDetail.armor,_carDetail.luk,) = _game.getTokenDetail(tokenId);
+        (_carDetail.level,_carDetail.ce,_carDetail.xp,_carDetail.armor,_carDetail.luk,) = Game.getTokenDetail(tokenId);
         
         
         if (rand(100)>=_figInfo.totalSuc){
@@ -195,6 +175,7 @@ contract Monster is Ownable  {
             }
         }
     }
+    //set enemy info
     function editEnemy(uint256 id,uint256 odds,uint256 reward,uint256 xp,uint256 hp,string memory name) public onlyOwner{
         for(uint256 i=0;i<enemys.length;i++){
             if(enemys[i].id == id){
@@ -211,32 +192,33 @@ contract Monster is Ownable  {
 
     function getHp(uint256 tokenId) view public returns(uint256){
         CardDetails memory _carDetail;
-        (_carDetail.level,_carDetail.ce,_carDetail.xp,_carDetail.armor,_carDetail.luk,_carDetail.rgTime) = _game.getTokenDetail(tokenId);
+        (_carDetail.level,_carDetail.ce,_carDetail.xp,_carDetail.armor,_carDetail.luk,_carDetail.rgTime) = Game.getTokenDetail(tokenId);
         if(_carDetail.rgTime ==0){
             return basicHp ;
         }else{
             if (_carDetail.rgTime<=block.timestamp){
                 return basicHp;
             }else{
-                uint256  useTime = _carDetail.rgTime - block.timestamp;
-                return _carDetail.hp + rgHp(useTime) ;
+                uint256 useTime = _carDetail.rgTime - block.timestamp;
+                return _carDetail.hp + rgHp(useTime);
             }
         }
     }
 
-    function getRgTime(uint256 hp) view internal returns(uint256){
-        return hp*_unlockTime/basicHp; // ===================change
-    }
-    
-   
     function rgHp(uint256 useTime)public view returns(uint256 hp){
-        uint256 rate = basicHp/_unlockTime;
+        // uint256 rate = basicHp/_unlockTime;  //============change
+        uint256 rate = basicHp/600; 
         return basicHp - rate*useTime;
     }
+
+    function getRgTime(uint256 hp)internal view returns(uint256){
+        return hp*_unlockTime/basicHp; 
+    }
+    
     function setGame(address payable _token) public onlyOwner{
-        _game = IGame(_token);
+        Game = IGame(_token);
     }
     function setHero(address _token) public onlyOwner{
-        _hero = IHero(_token);
+        Hero = IHero(_token);
     }
 }

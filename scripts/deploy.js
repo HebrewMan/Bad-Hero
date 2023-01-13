@@ -12,39 +12,39 @@ async function main() {
   const NFT = await hre.ethers.getContractFactory("NFT");
   const nft = await NFT.deploy();
   await nft.deployed();
-  console.log("NFT deployed to:", nft.address);
+  console.log("nft_contract:", nft.address);
 
   /** box */
   // We get the contract to deploy
   const Box = await hre.ethers.getContractFactory("Box");
   const box = await Box.deploy();
   await box.deployed();
-  console.log("Box deployed to:", box.address);
+  console.log("box_contract:", box.address);
   /** game */
   const Game = await hre.ethers.getContractFactory("Game");
   const game = await Game.deploy();
   await game.deployed();
-  console.log("Game deployed to:", game.address);
+  console.log("game_contract:", game.address);
   /** monster */
   const Monster = await hre.ethers.getContractFactory("Monster");
   const monster = await Monster.deploy();
   await monster.deployed();
-  console.log("Monster deployed to:", monster.address);
+  console.log("monster_contract:", monster.address);
   /** Arena */
   const Arena = await hre.ethers.getContractFactory("Arena");
   const arena = await Arena.deploy();
   await arena.deployed();
-  console.log("Arena deployed to:", arena.address);
+  console.log("arena_contract:", arena.address);
   /** Market */
   const Market = await hre.ethers.getContractFactory("Market");
   const market = await Market.deploy();
   await market.deployed();
-  console.log("Market deployed to:", market.address);
+  console.log("market_contract:", market.address);
   /** Hero */
   const Hero = await hre.ethers.getContractFactory("Hero");
   const hero = await Hero.deploy();
   await hero.deployed();
-  console.log("Hero deployed to:", hero.address);
+  console.log("hero_contract:", hero.address);
 
   // 初始化数据
   var erc20Token = "0x2fC0eBefDD68134809Ee359BBC8A5576c3788120";
@@ -117,8 +117,9 @@ async function main() {
 
 
   /** Test 测试专用配置*/
-  const setUnlockTimeTx = await market.setUnlockTime(1800);
-  await setUnlockTimeTx.wait();
+
+  // const setUnlockTimeTx = await market.setUnStakeTime(1800);
+  // await setUnlockTimeTx.wait();
 
   const addWhiteListTx1 = await box.addWhiteList("0x511673a05De8e6CdFf5464e3490d294f21666242", true);
   await addWhiteListTx1.wait();
@@ -126,8 +127,8 @@ async function main() {
   const addWhiteListTx2 = await box.addWhiteList("0xA1152FC97d76a8Db0e530f0202B31e9C54801349", true);
   await addWhiteListTx2.wait();
 
-  const setUnlockTimeTx2 = await game.setUnlockTime(600);
-  await setUnlockTimeTx2.wait();
+  // const setUnlockTimeTx2 = await game.setUnlockTime(3600);
+  // await setUnlockTimeTx2.wait();
 
   // const setGameInfoTx =  game.setGameInfo(12*3600,5,10*10**18,100,10,25,2000*10**18);
   // await setGameInfoTx.wait();

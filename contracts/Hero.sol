@@ -3,18 +3,17 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./NFT.sol";
-import "./Game.sol";
+import "./interfaces/IGame.sol";
 
 contract Hero is Ownable{
     constructor() {
         initStart();
     }
     
-    uint256 _upEqCost = 1000*10**18;     
+    uint256 _upEqCost = 50000*10**18;     
     
     IERC20 public erc20;
-    Game  public  _game;
+    IGame  public  Game;
     
     mapping(address=>heroAttribute[]) _userHero; 
     mapping(uint64=>monsterInfo[]) _monsters;
@@ -65,7 +64,11 @@ contract Hero is Ownable{
 
     event UpHeroEq(uint256 indexed eqType,uint256 indexed level,uint256 amount,address sender);
     event Withdrawal(uint256 indexed amount,address indexed sender);
-   
+    //Set upgrade equipment fee
+    function setUpEqCost(uint _fee) external onlyOwner{
+        _upEqCost = _fee;
+    }
+   //升级装备
     function upEquipment(uint32 _eqType) public{
         heroAttribute[] storage heroEqs =  _userHero[msg.sender];
         uint256 level ;
@@ -131,10 +134,9 @@ contract Hero is Ownable{
         _nftKinds[2] = nftKind(5,19,80,"SR","Super Rare","");
         _nftKinds[3] = nftKind(1,5,85,"SSR","Super Super Rare","");
         _nftKinds[4] = nftKind(0,1,90,"UR","Ultra Rare","");
-        
     }
 
-    function _setMonsterInfo()  internal{
+    function _setMonsterInfo() internal{
         _monsters[0].push(monsterInfo(0,150,150,150,"Geryon"));
         _monsters[0].push(monsterInfo(0,50,200,200,"Agrius"));
         _monsters[0].push(monsterInfo(0,300,50,100,"Grindylow"));
@@ -175,12 +177,13 @@ contract Hero is Ownable{
         return _nftKinds[index];
     }
 
+
     function getMonsterType() view public returns(uint256 ,uint256,uint256,uint256,uint256,string memory){
         uint256 num = 5;
         uint256 nftKindId;
         uint256 monsterId;
         uint256 random=rand(100);
-        monsterInfo memory _monster ;
+        monsterInfo memory _monster;
         for (uint256 i=0;i<num;i++){
             if (_nftKinds[i].start <=random && random < _nftKinds[i].end){
                 nftKindId = i;
@@ -192,7 +195,7 @@ contract Hero is Ownable{
     }
     
     // modifier isUser(uint256 tokenId){
-    //    require(_game.getUserAddress(tokenId)!=msg.sender,"Have no legal power");
+    //    require(Game.getUserAddress(tokenId)!=msg.sender,"Have no legal power");
     //     _;
     // }
    
@@ -238,7 +241,7 @@ contract Hero is Ownable{
             
         }
         cardDetails memory _cardDetails;
-        (,_cardDetails.ce,_cardDetails.xp,_cardDetails.armor,_cardDetails.luk,) =  _game.getTokenDetail(tokenId);
+        (,_cardDetails.ce,_cardDetails.xp,_cardDetails.armor,_cardDetails.luk,) =  Game.getTokenDetail(tokenId);
         _combatOdds.addPower += _cardDetails.ce;
         _combatOdds.addDefens += _cardDetails.armor;
         // _combatOdds.addXp += _cardDetails.xp;
@@ -249,8 +252,8 @@ contract Hero is Ownable{
         return (_combatOdds.addPower,_combatOdds.addDefens,_combatOdds.addXp,_combatOdds.addLuk,_combatOdds.injury,_combatOdds.addReward);
     }
 
-    function setGame(address payable _gameAddress) public onlyOwner{
-        _game = Game(_gameAddress);
+    function setGame(address _addr) public onlyOwner{
+        Game = IGame(_addr);
     }
    
    function setToken(address _tokenAddress) public onlyOwner{

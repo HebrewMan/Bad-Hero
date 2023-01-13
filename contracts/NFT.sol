@@ -5,16 +5,16 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-
+import "@openzeppelin/contracts/access/Ownable.sol";
 // import "./UserLib.sol";
 
-contract NFT is ERC721, AccessControl {
+contract NFT is ERC721, AccessControl,Ownable{
     using Counters for Counters.Counter;
     // using UserLib for UserLib.CardDetails;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     Counters.Counter private _tokenIdCounter;
-    string public baseUri;
+    string public baseUri = "http://192.168.1.109:8087/metadata?TokenId=";
 
     constructor() ERC721("NFT", "MWR") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
