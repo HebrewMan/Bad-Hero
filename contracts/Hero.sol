@@ -10,7 +10,7 @@ contract Hero is Ownable{
         initStart();
     }
     
-    uint256 _upEqCost = 50000*10**18;     
+    uint256 public upEqFee = 50000*10**18;     
     
     IERC20 public erc20;
     IGame  public  Game;
@@ -66,7 +66,7 @@ contract Hero is Ownable{
     event Withdrawal(uint256 indexed amount,address indexed sender);
     //Set upgrade equipment fee
     function setUpEqCost(uint _fee) external onlyOwner{
-        _upEqCost = _fee;
+        upEqFee = _fee;
     }
    //升级装备
     function upEquipment(uint32 _eqType) public{
@@ -78,11 +78,11 @@ contract Hero is Ownable{
                 require(level<=3,"Level cap");
                 heroEqs[index].level = uint32(level);
                 heroEqs[index].bonus = getBonus(uint32(index),level);
-                erc20.transferFrom(msg.sender, address(this), _upEqCost);
+                erc20.transferFrom(msg.sender, address(this), upEqFee);
                 break;
             }
         }
-        emit UpHeroEq(_eqType,level,_upEqCost,msg.sender);
+        emit UpHeroEq(_eqType,level,upEqFee,msg.sender);
     }
      function getBonus(uint32 index,uint256 level) view public returns(uint256){
         eqAttribute[] memory attr = _equipment[index];

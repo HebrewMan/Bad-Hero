@@ -12,7 +12,7 @@ contract Market is AccessControl,Ownable{
 
     using EnumerableSet for EnumerableSet.UintSet;
     uint256 public unStakeTime = 86400;
-    uint256 public fee = 5;
+    uint256 public feeRate = 5;
     bytes32 constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     IGame public Game;
@@ -83,8 +83,8 @@ contract Market is AccessControl,Ownable{
         StakeInfo.money = _reward;
     }
 
-    function setFee(uint _fee)external onlyOwner{
-        fee = _fee;
+    function setFeeRate(uint _feeRate)external onlyOwner{
+        feeRate = _feeRate;
     }
 
     function shelves(uint256 _tokenId,uint256 _money) public{
@@ -124,7 +124,7 @@ contract Market is AccessControl,Ownable{
         uint256 money = _marketInfo[_tokenId].price;
         require(nftOwner!=msg.sender,"You can't buy your own sale");
         nftTransferFrom(address(this),msg.sender, _tokenId);
-        uint256 _fee=_marketInfo[_tokenId].price*fee/100;
+        uint256 _fee=_marketInfo[_tokenId].price*feeRate/100;
         uint256 ownerMoney = _marketInfo[_tokenId].price - _fee;
         for(uint256 i=0;i<markets.length;i++){
             if (markets[i].tokenId==_tokenId){
@@ -152,10 +152,10 @@ contract Market is AccessControl,Ownable{
         Game.setTokenDetailGenre(_tokenId, 1);
         NFT.transferFrom(msg.sender,address(this), _tokenId);
         // nftTransferFrom(msg.sender,address(this),_tokenId);
-        uint256 money = getNFTKindRewards(_tokenId);
         userStakeInfo[msg.sender].add(_tokenId);
 
-        _tokenMtStakeInfo[_tokenId] = mtStakeInfo(_tokenId,block.timestamp,block.timestamp + StakeInfo.day*unStakeTime,StakeInfo.money+money);
+        // _tokenMtStakeInfo[_tokenId] = mtStakeInfo(_tokenId,block.timestamp,block.timestamp + StakeInfo.day*unStakeTime,StakeInfo.money+getNFTKindRewards(_tokenId));
+        _tokenMtStakeInfo[_tokenId] = mtStakeInfo(_tokenId,block.timestamp,block.timestamp + StakeInfo.day*unStakeTime,getNFTKindRewards(_tokenId));
 
         emit Stake(_tokenId, 1, msg.sender);
     }

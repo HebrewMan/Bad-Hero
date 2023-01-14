@@ -14,16 +14,16 @@ contract Game is AccessControl,Ownable {
     
     uint32 enemyNum = 0;
     uint256 basicHp = 200*10**8;
-    uint256 _unlockTime = 86400;
-    uint256 public upFee = 50000*10**18;
+    uint256 public _unlockTime = 86400;
+    uint256 public upMonsterFee = 50000*10**18;
     uint256 public bnbPool; 
 
     address public vault = 0xca4cA3B126154b8952d3068Eb3498CdE8be1B025; // ====================== change
 
     IERC20 public erc20;
     IMonster public _monster;
-    gameInfo private _gameInfo = gameInfo(12*3600,5,20000*10**18,100,10,25,2000*10**18); 
-    receiveInfo _receiveInfo = receiveInfo(2*_unlockTime,3,7);
+    gameInfo public _gameInfo = gameInfo(12*3600,5,20000*10**18,100,10,25,2000*10**18); 
+    receiveInfo public _receiveInfo = receiveInfo(2*_unlockTime,3,7);
     
     mapping(address=>EnumerableSet.UintSet) _userTem;
     mapping(address=>EnumerableSet.UintSet) _userBackpack;
@@ -71,7 +71,7 @@ contract Game is AccessControl,Ownable {
         uint256 maxLevel; //怪物最大升级等级
         uint256 addAttr; //升级等级增加的属性增值
         uint256 upAttrCost; //升级消耗手续费比例
-        uint256 upEqCost;  //升级装备消耗 
+        uint256 upEqCost;  //升级装备消耗 //无效
     }
     
     
@@ -125,8 +125,8 @@ contract Game is AccessControl,Ownable {
        _receiveInfo = receiveInfo(2*_unlockTime,3,7);
    }
 
-   function setUpFee(uint _fee) external onlyOwner{
-        upFee = _fee;
+   function setupMonsterFee(uint _fee) external onlyOwner{
+        upMonsterFee = _fee;
     }
     /*
     * @dev 加速领取收益支付费用（比例）
@@ -145,6 +145,10 @@ contract Game is AccessControl,Ownable {
 
     function setGameInfo(uint32 enlistTime,uint32 temNum,uint256 speedMoney,uint256 maxLevel,uint256 addAttr,uint256 upAttrCost,uint256 upEqCost) public onlyOwner {
         _gameInfo = gameInfo(enlistTime,temNum,speedMoney,maxLevel,addAttr,upAttrCost,upEqCost);
+    }
+
+    function setSpeedMoney(uint256 _speedMoney)external onlyOwner{
+       _gameInfo.speedMoney = _speedMoney;
     }
 
       //set monster type 
@@ -331,13 +335,13 @@ contract Game is AccessControl,Ownable {
         require(tokenDetail[_tokenId].xp >= needXp,"xp is lack");
         // uint256 amount;
         // amount = getUpConst(_tokenId);
-        erc20.transferFrom(msg.sender, address(this), upFee);
-        tokenDetail[_tokenId].xp = needXp;
+        erc20.transferFrom(msg.sender, address(this), upMonsterFee);
+        tokenDetail[_tokenId].xp = needXp +1;
         tokenDetail[_tokenId].level = tokenDetail[_tokenId].level+1;
         tokenDetail[_tokenId].ce += _gameInfo.addAttr;
         tokenDetail[_tokenId].armor += _gameInfo.addAttr;
         tokenDetail[_tokenId].luk += _gameInfo.addAttr;
-        emit UpMonster(_tokenId,tokenDetail[_tokenId].level,upFee,msg.sender);
+        emit UpMonster(_tokenId,tokenDetail[_tokenId].level,upMonsterFee,msg.sender);
     }
 
     function drawReward(uint256 index) public returns(bool){
@@ -406,27 +410,29 @@ contract Game is AccessControl,Ownable {
         addTask(18,1*10**17,0,20*10**8,"zcdq","");
         addTask(10,2*10**17,0,20*10**8,"gdrz","");
     }
-    function editTask(uint _id,uint _reward)external onlyOwner{
+    function editTask(uint256 _id,uint256 _odds,uint256 _reward)external onlyOwner{
         for(uint256 i=0;i<_specialTask.length;i++){
             if(_specialTask[i].id == _id){
+                _specialTask[i].odds = _odds;
                 _specialTask[i].basicReward = _reward;
                 break;
             }
         }
     }
 
+ 
     function getSpecialTask() public view returns(enemyInfo[] memory){
         return _specialTask;
     }
     
-    function getUpConst(uint256 tokenId) public view returns(uint256){
-        uint256 reward = getRewardByLevel(tokenId);
-        if (reward<=0){
-            return 0;
-        }
-        uint256 amount = reward * _gameInfo.upAttrCost /100;
-        return amount;
-    }
+    // function getUpConst(uint256 tokenId) public view returns(uint256){
+    //     uint256 reward = getRewardByLevel(tokenId);
+    //     if (reward<=0){
+    //         return 0;
+    //     }
+    //     uint256 amount = reward * _gameInfo.upAttrCost /100;
+    //     return amount;
+    // }
 
     function getRewardByLevel(uint256 tokenId) public view returns(uint256){
        return _tokenLevel[tokenId][tokenDetail[tokenId].level];
@@ -459,7 +465,7 @@ contract Game is AccessControl,Ownable {
     	bnbPool += msg.value;
 	}
 
-     function withdrawal(address addr,uint256 amount) public onlyOwner returns(bool){
+    function withdrawal(address addr,uint256 amount) public onlyOwner returns(bool){
         bnbPool = bnbPool - amount;
         (bool success, ) = addr.call{value: amount}(new bytes(0));
         emit Withdrawal(amount,addr);

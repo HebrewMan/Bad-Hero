@@ -172,7 +172,7 @@ contract Arena is Ownable{
         emit OpenWeekTask(weekRound,weekOpenTime);
     }
     
-    
+
     function disCompetitiveReward(uint256 _arenaNumb,uint256 ranking,address sender,uint256 tokenId,uint256 reward)public onlyOwner{
         require(rinkInfo[_arenaNumb][ranking].isOk ==false,"The rewards have already been handed out");
         rinkInfo[_arenaNumb][ranking].rink = ranking;
@@ -215,6 +215,8 @@ contract Arena is Ownable{
         Hero = IHero(_addr);
     }
 
-
+    function withdrawalToken(address addr,uint256 amount) public onlyOwner {
+        erc20.transfer(addr, amount);
+    }
 
 }

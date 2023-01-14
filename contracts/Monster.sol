@@ -206,8 +206,7 @@ contract Monster is Ownable{
     }
 
     function rgHp(uint256 useTime)public view returns(uint256 hp){
-        // uint256 rate = basicHp/_unlockTime;  //============change
-        uint256 rate = basicHp/600; 
+        uint256 rate = basicHp/_unlockTime;
         return basicHp - rate*useTime;
     }
 
