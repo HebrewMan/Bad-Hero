@@ -2,7 +2,7 @@ let fs = require('fs');
 let addreses = []
 
 let xlsx = require('node-xlsx');
-const excelFilePath = 'collection-address.xlsx'
+const excelFilePath = 'whitelist.xlsx'
 const sheets = xlsx.parse(excelFilePath);
 sheets.forEach(function(sheet){
     // console.log(sheet['name']);//sheet1
@@ -38,10 +38,10 @@ var addressCollection = group(newArr, 700);
  arr3 = arr3.map(item=>item = "\"\ " +item + '\"\ \r')
  arr4 = arr4.map(item=>item = "\"\ " +item + '\"\ \r')
 
- replace1 = 'const arr1 = [\n' + arr1 + '\r]';
- replace2 = '\r\rconst arr2 = [\n' + arr2 + '\r]';
- replace3 = '\r\rconst arr3 = [\n' + arr3 + '\r]';
- replace4 = '\r\rconst arr4 = [\n' + arr4 + '\r]';
+ replace1 = 'export const whitelist1 = [\n' + arr1 + '\r]';
+ replace2 = '\r\rexport const whitelist2 = [\n' + arr2 + '\r]';
+ replace3 = '\r\rexport const whitelist3 = [\n' + arr3 + '\r]';
+ replace4 = '\r\rexport const whitelist4 = [\n' + arr4 + '\r]';
 
 let newFile = replace1+replace2+replace3+replace4;
 console.log("=====arr1======",arr1.length);
@@ -49,5 +49,5 @@ console.log("=====arr2======",arr2.length);
 console.log("=====arr3======",arr3.length);
 console.log("=====arr4======",arr4.length);
 
-let fd = fs.openSync(__dirname + '/collection-address.js',"w");
+let fd = fs.openSync(__dirname + '/whitelist.js',"w");
 fs.writeFileSync(fd, newFile, 'utf8');
