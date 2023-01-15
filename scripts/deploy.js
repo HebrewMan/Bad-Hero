@@ -11,39 +11,33 @@ async function main() {
   /** nft */
   const NFT = await hre.ethers.getContractFactory("NFT");
   const nft = await NFT.deploy();
-  await nft.deployed();
   console.log("nft_contract:", nft.address);
-
   /** box */
   // We get the contract to deploy
   const Box = await hre.ethers.getContractFactory("Box");
   const box = await Box.deploy();
-  await box.deployed();
   console.log("box_contract:", box.address);
   /** game */
   const Game = await hre.ethers.getContractFactory("Game");
   const game = await Game.deploy();
-  await game.deployed();
   console.log("game_contract:", game.address);
   /** monster */
   const Monster = await hre.ethers.getContractFactory("Monster");
   const monster = await Monster.deploy();
-  await monster.deployed();
+  // await monster.deployed();
   console.log("monster_contract:", monster.address);
   /** Arena */
   const Arena = await hre.ethers.getContractFactory("Arena");
   const arena = await Arena.deploy();
-  await arena.deployed();
+  // await arena.deployed();
   console.log("arena_contract:", arena.address);
   /** Market */
   const Market = await hre.ethers.getContractFactory("Market");
   const market = await Market.deploy();
-  await market.deployed();
   console.log("market_contract:", market.address);
   /** Hero */
   const Hero = await hre.ethers.getContractFactory("Hero");
   const hero = await Hero.deploy();
-  await hero.deployed();
   console.log("hero_contract:", hero.address);
 
   // 初始化数据

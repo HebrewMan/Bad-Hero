@@ -16,7 +16,7 @@ contract Box is Ownable, ReentrancyGuard{
     uint256 _temNum = 5;
     uint256 public discountNumerator = 7000;
     uint256 public discountDenominator = 10000;
-    address public bank = 0xca4cA3B126154b8952d3068Eb3498CdE8be1B025; // ====================== change
+    address public bank = 0x89398e9ab06dA0E5F0243eD6372bA56603867995; 
 
     IGame public Game;
     IHero public Hero = IHero(0xCDdB3Df2ecEa4A23ddf36644B82920677be3FFB2);

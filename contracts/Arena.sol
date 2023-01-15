@@ -24,7 +24,7 @@ contract Arena is Ownable{
     arRewardSet[] public _arRewardSet;
     nftKind[] public _nftKinds;
 
-    arenaSet public ArenaSet = arenaSet(7,100*10**18,15); 
+    arenaSet public ArenaSet = arenaSet(7,20000*10**18,15); 
     weekFighting _weekFighting = weekFighting(0,5,100,10);  
 
     IERC20 public erc20 = IERC20(0x0a2231B33152d059454FF43F616E4434Afb6Cc64);
@@ -33,8 +33,8 @@ contract Arena is Ownable{
 
     constructor() {
         initArRewardSet();
-        arenaOpenTime = 1673002049;
-        weekOpenTime = 1673002049 + weekCycle;
+        arenaOpenTime = 1673002049; //===============change
+        weekOpenTime = 1673002049 + weekCycle; //===============change
     }
    
     event JoinArena(uint256 indexed tokenId,uint256 indexed nper,uint256 indexed wins,address sender);
