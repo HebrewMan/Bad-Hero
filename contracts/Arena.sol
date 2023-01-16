@@ -33,8 +33,8 @@ contract Arena is Ownable{
 
     constructor() {
         initArRewardSet();
-        arenaOpenTime = 1673002049; //===============change
-        weekOpenTime = 1673002049 + weekCycle; //===============change
+        arenaOpenTime = 1673773504; 
+        weekOpenTime = 1673773504 + weekCycle; 
     }
    
     event JoinArena(uint256 indexed tokenId,uint256 indexed nper,uint256 indexed wins,address sender);

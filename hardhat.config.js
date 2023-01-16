@@ -49,7 +49,13 @@ module.exports = {
       gasPrice: 50000000000,
       accounts: [process.env.DEPLOY_PRIVATE_KEY]
     },
-    // rinkeby: {
+    aitdMain: {
+      url: "https://walletrpc.aitd.io",
+      chainId: 1319,
+      gasPrice: 50000000000,
+      accounts: [process.env.DEPLOY_PRIVATE_KEY]
+    },
+    // rinkeby:
     //   url: "https://eth-rinkeby.alchemyapi.io/v2/123abc123abc123abc123abc123abcde",
     //   accounts: [privateKey1, privateKey2]
     // }

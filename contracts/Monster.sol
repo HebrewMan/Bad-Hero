@@ -155,11 +155,11 @@ contract Monster is Ownable{
 
     function initEney() internal{
         if(enemys.length ==0 ){
-            addEnemy(80,2*10**16,20,200*10**8,"Gabriel","");
-            addEnemy(50,3*10**16,20,200*10**8,"Horace","");
-            addEnemy(25,4*10**16,25,200*10**8,"Rufio","");
-            addEnemy(20,5*10**16,25,200*10**8,"Hadrea","");
-            addEnemy(15,6*10**16,30,200*10**8,"Sirius","");
+            addEnemy(70,4*10**16,20,200*10**8,"Gabriel","");
+            addEnemy(65,6*10**16,20,200*10**8,"Horace","");
+            addEnemy(60,8*10**16,25,200*10**8,"Rufio","");
+            addEnemy(55,10*10**16,25,200*10**8,"Hadrea","");
+            addEnemy(50,12*10**16,30,200*10**8,"Sirius","");
         }
     }
 

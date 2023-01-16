@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./interfaces/IMonster.sol";
-import "hardhat/console.sol";
 contract Game is AccessControl,Ownable {
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -18,7 +17,7 @@ contract Game is AccessControl,Ownable {
     uint256 public upMonsterFee = 50000*10**18;
     uint256 public bnbPool; 
 
-    address public vault = 0xca4cA3B126154b8952d3068Eb3498CdE8be1B025; // ====================== change
+    address public vault = 0x89398e9ab06dA0E5F0243eD6372bA56603867995;
 
     IERC20 public erc20;
     IMonster public _monster;
@@ -407,7 +406,7 @@ contract Game is AccessControl,Ownable {
         enemyNum +=1;
     }
     function pushTask() internal{
-        addTask(18,1*10**17,0,20*10**8,"zcdq","");
+        addTask(20,1*10**17,0,20*10**8,"zcdq","");
         addTask(10,2*10**17,0,20*10**8,"gdrz","");
     }
     function editTask(uint256 _id,uint256 _odds,uint256 _reward)external onlyOwner{
