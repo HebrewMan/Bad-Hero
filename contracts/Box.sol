@@ -97,7 +97,7 @@ contract Box is Ownable, ReentrancyGuard{
         
     }
 
-    function openBoxBatch(uint32[] memory indexs) public {
+    function openBoxBatch(uint32[] memory indexs) public { 
         for(uint256 i = 0; i < indexs.length; ++i) {
             openBox(indexs[i]);
         }

@@ -14,34 +14,34 @@ async function main() {
   /** nft */
   const NFT = await hre.ethers.getContractFactory("NFT");
   const nft = await NFT.deploy();
-  console.log("nft_contract:", nft.address);
+  console.log("🏕 nft_contract:", nft.address);
   /** box */
   // We get the contract to deploy
   const Box = await hre.ethers.getContractFactory("Box");
   const box = await Box.deploy();
-  console.log("box_contract:", box.address);
+  console.log("🏕 box_contract:", box.address);
   /** game */
   const Game = await hre.ethers.getContractFactory("Game");
   const game = await Game.deploy();
-  console.log("game_contract:", game.address);
+  console.log("🏕 game_contract:", game.address);
   /** monster */
   const Monster = await hre.ethers.getContractFactory("Monster");
   const monster = await Monster.deploy();
   // await monster.deployed();
-  console.log("monster_contract:", monster.address);
+  console.log("🏕 monster_contract:", monster.address);
   /** Arena */
   const Arena = await hre.ethers.getContractFactory("Arena");
   const arena = await Arena.deploy();
   // await arena.deployed();
-  console.log("arena_contract:", arena.address);
+  console.log("🏕 arena_contract:", arena.address);
   /** Market */
   const Market = await hre.ethers.getContractFactory("Market");
   const market = await Market.deploy();
-  console.log("market_contract:", market.address);
+  console.log("🏕 market_contract:", market.address);
   /** Hero */
   const Hero = await hre.ethers.getContractFactory("Hero");
   const hero = await Hero.deploy();
-  console.log("hero_contract:", hero.address);
+  console.log("🏕 hero_contract:", hero.address);
 
   // 初始化数据
   var erc20Token = "0x5439D37489Eef432979734e8ca7a36A826Cc1b58";
@@ -51,13 +51,13 @@ async function main() {
   // var priceRoter = "0xC9d4412910DBB03F7fF854cE3F1a9c1f3ebCAf85";
 
   /**nft */
-  // const setBoxsetRoletx = await nft.setRole(box.address);
-  // await setBoxsetRoletx.wait();
-  // console.log("setnft success");
+  const setBoxsetRoletx = await nft.setRole(box.address);
+  await setBoxsetRoletx.wait();
+  console.log("setnft success");
   /** Token */
-  // const setGameTokenTx = await box.setGame(game.address);
-  // await setGameTokenTx.wait();
-  
+  const setGameTokenTx = await box.setGame(game.address);
+  await setGameTokenTx.wait();
+  console.log("setGame success");
   /**box */
  
   const setBoxNftTx = await box.setNftToken(nftToken);
@@ -66,7 +66,7 @@ async function main() {
   await setBoxsetHeroTx.wait();
   const setBoxSetGameTx = await box.setGame(game.address);
   await setBoxSetGameTx.wait();
-  console.log("setBox success");
+  console.log("setBox success ✅");
   /** game */
   const setGameerc20TokenTx = await game.setErc20(erc20Token);
   await setGameerc20TokenTx.wait();
@@ -78,14 +78,14 @@ async function main() {
   await setGameRoloMarketTx.wait();
   const setGameRoloArenaTx = await game.setRole(arena.address);
   await setGameRoloArenaTx.wait();
-  console.log("setGame success");
+  console.log("setGame success ✅");
 
   /** monster */
   const setMonsterSetGameTx = await monster.setGame(game.address);
   await setMonsterSetGameTx.wait();
   const setMonstersetHERoTx = await monster.setHero(hero.address);
   await setMonstersetHERoTx.wait();
-  console.log("setMonsterset success");
+  console.log("setMonsterset success ✅");
 
   /** Arena */
   const setArenasetGameTx = await arena.setGame(game.address);
@@ -94,7 +94,7 @@ async function main() {
   await setArenasetErc20Tx.wait();
   const setArenasetsetHerox = await arena.setHero(hero.address);
   await setArenasetsetHerox.wait();
-  console.log("setArenaset success");
+  console.log("setArenaset success ✅");
 
   /** Market */
   const setMarksetErc20AddrTx = await market.setErc20Addr(erc20Token);
@@ -103,22 +103,20 @@ async function main() {
   await setMarksetNFTAddrTx.wait();
   const setMarksetGameTx = await market.setGame(game.address);
   await setMarksetGameTx.wait();
-  console.log("setMarkset success");
+  console.log("setMarkset success ✅");
 
   /** Hero */
   const setHerosetGameTx = await hero.setGame(game.address);
   await setHerosetGameTx.wait();
   const setHerosetERC20Tx = await hero.setToken(erc20Token);
   await setHerosetERC20Tx.wait();
-  console.log("setHeroset success");
+  console.log("setHeroset success ✅");
 
 
   /** Test 测试专用配置*/
 
   // const setUnlockTimeTx = await market.setUnStakeTime(1800);
   // await setUnlockTimeTx.wait();
-
-
 
   //whitelist addresses
   // let arr100 = [' 0xA1aeA46Fff687c1C28bE57489a4A3B2DFDaE89CE','0xE7ef279506848cc6efDe70fd4E4aFac7573FE471'];
@@ -133,23 +131,23 @@ async function main() {
   
   const addWhiteListTx1 = await box.addWhiteListBatch(_whitelist1, true);
   await addWhiteListTx1.wait();
-
+  console.log('whitelist progress ======> 10%');
   const addWhiteListTx2 = await box.addWhiteListBatch(_whitelist2, true);
   await addWhiteListTx2.wait();
-
+  console.log('whitelist progress ======> 25%');
   const addWhiteListTx3 = await box.addWhiteListBatch(_whitelist3, true);
   await addWhiteListTx3.wait();
-
+  console.log('whitelist progress ======> 40%');
   const addWhiteListTx4 = await box.addWhiteListBatch(_whitelist4, true);
   await addWhiteListTx4.wait();
-
+  console.log('whitelist progress ======> 60%');
   const addWhiteListTx5 = await box.addWhiteListBatch(_whitelist5, true);
   await addWhiteListTx5.wait();
-
+  console.log('whitelist progress ======> 90%');
   const addWhiteListTx6 = await box.addWhiteListBatch(_whitelist6, true);
   await addWhiteListTx6.wait();
-
-  console.log('set whitelist success')
+  console.log('whitelist progress ======> 100%');
+  console.log('set whitelist success ✅')
 
 
   // const setUnlockTimeTx2 = await game.setUnlockTime(3600);

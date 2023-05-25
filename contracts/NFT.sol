@@ -14,7 +14,7 @@ contract NFT is ERC721, AccessControl,Ownable{
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     Counters.Counter private _tokenIdCounter;
-    string public baseUri = "http://192.168.1.109:8087/metadata?TokenId=";
+    string public baseUri = "https://cryptohunter.stargame.io/api/metadata?TokenId=";
 
     constructor() ERC721("NFT", "MWR") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
